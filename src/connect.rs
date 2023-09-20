@@ -4,8 +4,6 @@ use dotenvy::dotenv;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 
-
-
 pub async fn establish_connection() -> Result<Arc<Mutex<DbConn>>, DbErr> {
     dotenv().ok();
     let database_url = std::env::var("DATABASE_URL").expect("DATABASE_URL must be set");

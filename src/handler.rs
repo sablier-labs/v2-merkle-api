@@ -1,20 +1,19 @@
 use crate::{
-    entities::{campaign, recipient},
+    dto::{CampaignDto, RecipientDto, RecipientPageDto},
+    repository::{create_campaign, get_recipients_by_campaign_gid, get_recipients_by_campaign_id},
     response::{
-        BadRequestResponse, GenericResponse, UploadSuccessResponse, ValidationErrorResponse,
+        BadRequestResponse, GenericResponse, RecipientsSuccessResponse, UploadSuccessResponse,
+        ValidationErrorResponse,
     },
-    utils::{CsvData, CsvRecord},
-    FormData, StreamExt, TryStreamExt, WebResult,
+    utils::CsvData,
+    FormData, StreamExt, TryStreamExt, WebResult, param::Pagination,
 };
 use bytes::BufMut;
-use chrono::Utc;
 use csv::ReaderBuilder;
-use sea_orm::{ActiveModelTrait, ColumnTrait, Condition, QueryFilter, QuerySelect, Set};
-use sea_orm::{DbConn, EntityTrait};
+use sea_orm::DbConn;
 use std::str;
 use std::sync::Arc;
 use tokio::sync::Mutex;
-use uuid::Uuid;
 use warp::{reply::json, Reply};
 
 #[derive(Debug)]
@@ -54,75 +53,40 @@ pub async fn upload_handler(form: FormData, db: Arc<Mutex<DbConn>>) -> WebResult
                         ));
                     }
 
-                    let now = Utc::now();
-                    let id = Uuid::new_v4();
-
-                    let campaign = campaign::ActiveModel {
-                        created_at: Set(now.timestamp().to_string()),
-                        gid: Set(id.to_string()),
-                        ..Default::default()
-                    };
-
-                    let campaign_model = campaign.insert(&db_conn).await;
-                    match campaign_model {
+                    let campaign_result = create_campaign(parsed_csv.records, &db_conn).await;
+                    match campaign_result {
                         Ok(campaign) => {
-                            let recipient_inputs =
-                                parsed_csv.records.iter().map(|rec| recipient::ActiveModel {
-                                    address: Set(rec.address.clone()),
-                                    amount: Set(rec.amount),
-                                    campaign_id: Set(campaign.id),
-                                    ..Default::default()
-                                });
-                            let recipients_model = recipient::Entity::insert_many(recipient_inputs)
-                                .exec(&db_conn)
-                                .await;
-
-                            match recipients_model {
-                                Ok(_) => {
-                                    let recipients = recipient::Entity::find()
-                                        .filter(
-                                            Condition::any()
-                                                .add(recipient::Column::CampaignId.eq(campaign.id)),
-                                        )
-                                        .offset(0)
-                                        .limit(50)
-                                        .all(&db_conn)
-                                        .await;
-
-                                    match recipients {
-                                        Ok(rec) => {
-                                            let lines: Vec<CsvRecord> = rec.into_iter().map(|x| CsvRecord {
-                                                address: x.address,
-                                                amount: x.amount,
-                                            }).collect();
-                                            let response_json = &UploadSuccessResponse {
-                                                status: "Successfully uploaded file".to_string(),
-                                                lines,
-                                                page_number: 0,
-                                                page_size: 50,
-                                            };
-                                            return Ok(warp::reply::with_status(
-                                                json(response_json),
-                                                warp::http::StatusCode::OK,
-                                            ));
-                                        }
-                                        Err(_e) => {
-                                            let response_json = &BadRequestResponse {
-                                                message:
-                                                    "There was a problem while creating a new campaign"
-                                                        .to_string(),
-                                            };
-                                            return Ok(warp::reply::with_status(
-                                                json(response_json),
-                                                warp::http::StatusCode::INTERNAL_SERVER_ERROR,
-                                            ));
-                                        }
-                                    }
+                            let recipient_result =
+                                get_recipients_by_campaign_id(campaign.id, 1, 50, &db_conn).await;
+                            match recipient_result {
+                                Ok(recipient) => {
+                                    let response_json = &UploadSuccessResponse {
+                                        status: "Upload successful".to_string(),
+                                        campaign: CampaignDto {
+                                            created_at: campaign.created_at,
+                                            gid: campaign.gid,
+                                        },
+                                        page: RecipientPageDto {
+                                            page_number: 1,
+                                            page_size: 50,
+                                            recipients: recipient
+                                                .into_iter()
+                                                .map(|x| RecipientDto {
+                                                    address: x.address,
+                                                    amount: x.amount,
+                                                })
+                                                .collect(),
+                                        },
+                                    };
+                                    return Ok(warp::reply::with_status(
+                                        json(response_json),
+                                        warp::http::StatusCode::INTERNAL_SERVER_ERROR,
+                                    ));
                                 }
-                                Err(_e) => {
+                                Err(_) => {
                                     let response_json = &BadRequestResponse {
                                         message:
-                                            "There was a problem while creating a new campaign"
+                                            "There was a problem while fetching the recipients"
                                                 .to_string(),
                                     };
                                     return Ok(warp::reply::with_status(
@@ -132,7 +96,7 @@ pub async fn upload_handler(form: FormData, db: Arc<Mutex<DbConn>>) -> WebResult
                                 }
                             }
                         }
-                        Err(_e) => {
+                        Err(_) => {
                             let response_json = &BadRequestResponse {
                                 message: "There was a problem while creating a new campaign"
                                     .to_string(),
@@ -164,6 +128,48 @@ pub async fn upload_handler(form: FormData, db: Arc<Mutex<DbConn>>) -> WebResult
         json(response_json),
         warp::http::StatusCode::BAD_REQUEST,
     ));
+}
+
+pub async fn get_recipients_handler(
+    gid: String,
+    pagination: Pagination,
+    db: Arc<Mutex<DbConn>>,
+) -> WebResult<impl Reply> {
+    let db = db.lock().await;
+    let db_conn = db.clone();
+
+    let recipients = get_recipients_by_campaign_gid(gid, pagination.page_number, pagination.page_size, &db_conn).await;
+    match recipients {
+        Ok(recipients) => {
+            let response_json = &RecipientsSuccessResponse {
+                status: "Request successful".to_string(),
+                page: RecipientPageDto {
+                    page_number: 1,
+                    page_size: 50,
+                    recipients: recipients
+                        .into_iter()
+                        .map(|x| RecipientDto {
+                            address: x.address,
+                            amount: x.amount,
+                        })
+                        .collect(),
+                },
+            };
+            return Ok(warp::reply::with_status(
+                json(response_json),
+                warp::http::StatusCode::INTERNAL_SERVER_ERROR,
+            ));
+        }
+        Err(_) => {
+            let response_json = &BadRequestResponse {
+                message: "There was a problem processing your request.".to_string(),
+            };
+            return Ok(warp::reply::with_status(
+                json(response_json),
+                warp::http::StatusCode::INSUFFICIENT_STORAGE,
+            ));
+        }
+    }
 }
 
 async fn process_part(part: warp::multipart::Part) -> Result<CsvData, warp::Rejection> {

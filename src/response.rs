@@ -1,4 +1,7 @@
-use crate::utils::{ValidationError, CsvRecord};
+use crate::{
+    dto::{CampaignDto, RecipientPageDto},
+    utils::ValidationError,
+};
 use serde::Serialize;
 
 #[derive(Serialize)]
@@ -21,7 +24,12 @@ pub struct ValidationErrorResponse {
 #[derive(Serialize, Debug)]
 pub struct UploadSuccessResponse {
     pub status: String,
-    pub lines: Vec<CsvRecord>,
-    pub page_number: i32,
-    pub page_size: i32,
+    pub campaign: CampaignDto,
+    pub page: RecipientPageDto,
+}
+
+#[derive(Serialize, Debug)]
+pub struct RecipientsSuccessResponse {
+    pub status: String,
+    pub page: RecipientPageDto,
 }

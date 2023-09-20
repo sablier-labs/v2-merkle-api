@@ -1,20 +1,27 @@
 use futures::stream::{StreamExt, TryStreamExt};
 use sea_orm::DbConn;
-use warp::{http::Method, multipart::FormData, Filter, Rejection};
 use std::sync::Arc;
 use tokio::sync::Mutex;
+use warp::{http::Method, multipart::FormData, Filter, Rejection};
 
+use crate::param::Pagination;
+
+mod connect;
+mod dto;
+mod entities;
 mod handler;
+mod param;
+mod repository;
 mod response;
 mod utils;
-mod connect;
-mod entities;
 
 type WebResult<T> = std::result::Result<T, Rejection>;
 
 #[tokio::main]
 async fn main() {
-    let db_pool = connect::establish_connection().await.expect("Failed to create db pool");
+    let db_pool = connect::establish_connection()
+        .await
+        .expect("Failed to create db pool");
 
     let health_checker = warp::path!("api" / "healthchecker")
         .and(warp::get())
@@ -32,18 +39,24 @@ async fn main() {
         .and(with_db(db_pool.clone()))
         .and_then(handler::upload_handler);
 
+    let get_recipients_route = warp::path!("api" / "entries" / String)
+        .and(warp::get())
+        .and(warp::query::query::<Pagination>())
+        .and(with_db(db_pool.clone()))
+        .and_then(handler::get_recipients_handler);
+
     let routes = health_checker
         .with(cors)
         .with(warp::log("api"))
-        .or(upload_route);
+        .or(upload_route)
+        .or(get_recipients_route);
 
     println!("🚀 Server started successfully");
     warp::serve(routes).run(([0, 0, 0, 0], 8000)).await;
 }
 
-fn with_db(db_pool: Arc<Mutex<DbConn>>) -> impl Filter<Extract = (Arc<Mutex<DbConn>>,), Error = std::convert::Infallible> + Clone {
+fn with_db(
+    db_pool: Arc<Mutex<DbConn>>,
+) -> impl Filter<Extract = (Arc<Mutex<DbConn>>,), Error = std::convert::Infallible> + Clone {
     warp::any().map(move || db_pool.clone())
 }
-
-
-
