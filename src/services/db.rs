@@ -3,6 +3,7 @@ use migration::{DbErr, Migrator, MigratorTrait};
 use sea_orm::{Database, DbConn};
 use std::sync::Arc;
 use tokio::sync::Mutex;
+use warp::Filter;
 
 pub async fn establish_connection() -> Result<Arc<Mutex<DbConn>>, DbErr> {
     dotenv().ok();
@@ -16,4 +17,10 @@ pub async fn establish_connection() -> Result<Arc<Mutex<DbConn>>, DbErr> {
         .expect("Failed to run migrations for tests");
 
     Ok(Arc::new(Mutex::new(db)))
+}
+
+pub fn with_db(
+    db_pool: Arc<Mutex<DbConn>>,
+) -> impl Filter<Extract = (Arc<Mutex<DbConn>>,), Error = std::convert::Infallible> + Clone {
+    warp::any().map(move || db_pool.clone())
 }
