@@ -1,16 +1,16 @@
 use crate::{
-    dto::{CampaignDto, RecipientDto, RecipientPageDto},
-    ipfs::{try_deserialize_pinata_response, upload_to_ipfs},
-    param::Pagination,
+    data_objects::dto::{CampaignDto, RecipientDto, RecipientPageDto},
+    data_objects::query_param::Pagination,
     repository::{
         create_campaign, get_campaign_by_gid, get_publish_information,
         get_recipients_by_campaign_gid, get_recipients_by_campaign_id,
     },
-    response::{
+    data_objects::response::{
         BadRequestResponse, CampaignSuccessResponse, GenericResponse, PublishSuccessResponse,
         RecipientsSuccessResponse, UploadSuccessResponse, ValidationErrorResponse,
     },
-    utils::CsvData,
+    services::ipfs::{try_deserialize_pinata_response, upload_to_ipfs},
+    utils::csv::CsvData,
     FormData, StreamExt, TryStreamExt, WebResult,
 };
 use bytes::BufMut;
@@ -226,7 +226,10 @@ pub async fn get_campaign_handler(gid: String, db: Arc<Mutex<DbConn>>) -> WebRes
     }
 }
 
-pub async fn publish_campaign(gid: String, db: Arc<Mutex<DbConn>>) -> WebResult<impl Reply> {
+pub async fn publish_campaign_handler(
+    gid: String,
+    db: Arc<Mutex<DbConn>>,
+) -> WebResult<impl Reply> {
     let db = db.lock().await;
     let db_conn = db.clone();
     let campaign_info = get_publish_information(gid, &db_conn).await;

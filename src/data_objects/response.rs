@@ -1,6 +1,6 @@
 use crate::{
-    dto::{CampaignDto, RecipientPageDto},
-    utils::ValidationError,
+    data_objects::dto::{CampaignDto, RecipientPageDto},
+    utils::csv::ValidationError,
 };
 use serde::Serialize;
 

@@ -2,7 +2,7 @@ use dotenvy::dotenv;
 use reqwest;
 use serde_json::json;
 
-use crate::dto::PersistentCampaignDto;
+use crate::data_objects::dto::PersistentCampaignDto;
 use serde::Deserialize;
 
 #[derive(Deserialize, Debug)]

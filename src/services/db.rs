@@ -1,6 +1,6 @@
+use dotenvy::dotenv;
 use migration::{DbErr, Migrator, MigratorTrait};
 use sea_orm::{Database, DbConn};
-use dotenvy::dotenv;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 

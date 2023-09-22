@@ -1,6 +1,6 @@
 use crate::{
     entities::{campaign, recipient},
-    utils::CsvRecord, dto::{PersistentCampaignDto, RecipientDto},
+    utils::csv::CsvRecord, data_objects::dto::{PersistentCampaignDto, RecipientDto},
 };
 use chrono::Utc;
 use migration::DbErr;
