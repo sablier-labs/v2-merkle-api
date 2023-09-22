@@ -33,3 +33,15 @@ pub struct RecipientsSuccessResponse {
     pub status: String,
     pub page: RecipientPageDto,
 }
+
+#[derive(Serialize, Debug)]
+pub struct CampaignSuccessResponse {
+    pub status: String,
+    pub campaign: CampaignDto,
+}
+
+#[derive(Serialize, Debug)]
+pub struct PublishSuccessResponse {
+    pub status: String,
+    pub cid: String,
+}

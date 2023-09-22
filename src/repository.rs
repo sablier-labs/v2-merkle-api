@@ -1,6 +1,6 @@
 use crate::{
     entities::{campaign, recipient},
-    utils::CsvRecord,
+    utils::CsvRecord, dto::{PersistentCampaignDto, RecipientDto},
 };
 use chrono::Utc;
 use migration::DbErr;
@@ -16,9 +16,14 @@ pub async fn create_campaign(
     let now = Utc::now();
     let id = Uuid::new_v4();
 
+    let total_amount = records.iter().fold(0.0, |acc, rec| acc + rec.amount);
+    let number_of_recipients = records.iter().count();
+
     let campaign = campaign::ActiveModel {
         created_at: Set(now.timestamp().to_string()),
         gid: Set(id.to_string()),
+        total_amount: Set(total_amount),
+        number_of_recipients: Set(number_of_recipients as i32),
         ..Default::default()
     };
     let campaign_model = campaign.insert(db_conn).await?;
@@ -77,6 +82,52 @@ pub async fn get_recipients_by_campaign_gid(
         None => {
             let empty: Vec<recipient::Model> = Vec::new();
             return Ok(empty);
+        }
+    }
+}
+
+pub async fn get_campaign_by_gid(
+    campaign_gid: String,
+    db_conn: &DbConn,
+) -> Result<Option<campaign::Model>, DbErr> {
+    let campaign = campaign::Entity::find()
+        .filter(Condition::any().add(campaign::Column::Gid.eq(campaign_gid)))
+        .one(db_conn)
+        .await?;
+
+    Ok(campaign)
+}
+
+pub async fn get_publish_information(
+    campaign_gid: String,
+    db_conn: &DbConn,
+) -> Result<Option<PersistentCampaignDto>, DbErr> {
+    let campaign = campaign::Entity::find()
+        .filter(Condition::any().add(campaign::Column::Gid.eq(campaign_gid)))
+        .one(db_conn)
+        .await?;
+
+    match campaign {
+        Some(campaign) => {
+            let recipients = recipient::Entity::find()
+                .filter(Condition::any().add(recipient::Column::CampaignId.eq(campaign.id)))
+                .all(db_conn)
+                .await?;
+            let result = PersistentCampaignDto{
+                total_amount: campaign.total_amount,
+                number_of_recipients: campaign.number_of_recipients,
+                recipients: recipients
+                .into_iter()
+                .map(|x| RecipientDto {
+                    address: x.address,
+                    amount: x.amount,
+                })
+                .collect()
+            };
+            Ok(Some(result))
+        }
+        None => {
+            Ok(None)
         }
     }
 }

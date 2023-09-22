@@ -20,6 +20,12 @@ impl MigrationTrait for Migration {
                     )
                     .col(ColumnDef::new(Campaign::CreatedAt).date_time().not_null())
                     .col(ColumnDef::new(Campaign::Gid).uuid().not_null().unique_key())
+                    .col(ColumnDef::new(Campaign::TotalAmount).double().not_null())
+                    .col(
+                        ColumnDef::new(Campaign::NumberOfRecipients)
+                            .integer()
+                            .not_null(),
+                    )
                     .to_owned(),
             )
             .await
@@ -38,4 +44,6 @@ pub enum Campaign {
     Id,
     CreatedAt,
     Gid,
+    TotalAmount,
+    NumberOfRecipients,
 }

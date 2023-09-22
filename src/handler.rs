@@ -1,15 +1,21 @@
 use crate::{
     dto::{CampaignDto, RecipientDto, RecipientPageDto},
-    repository::{create_campaign, get_recipients_by_campaign_gid, get_recipients_by_campaign_id},
+    ipfs::{try_deserialize_pinata_response, upload_to_ipfs},
+    param::Pagination,
+    repository::{
+        create_campaign, get_campaign_by_gid, get_publish_information,
+        get_recipients_by_campaign_gid, get_recipients_by_campaign_id,
+    },
     response::{
-        BadRequestResponse, GenericResponse, RecipientsSuccessResponse, UploadSuccessResponse,
-        ValidationErrorResponse,
+        BadRequestResponse, CampaignSuccessResponse, GenericResponse, PublishSuccessResponse,
+        RecipientsSuccessResponse, UploadSuccessResponse, ValidationErrorResponse,
     },
     utils::CsvData,
-    FormData, StreamExt, TryStreamExt, WebResult, param::Pagination,
+    FormData, StreamExt, TryStreamExt, WebResult,
 };
 use bytes::BufMut;
 use csv::ReaderBuilder;
+
 use sea_orm::DbConn;
 use std::str;
 use std::sync::Arc;
@@ -65,6 +71,8 @@ pub async fn upload_handler(form: FormData, db: Arc<Mutex<DbConn>>) -> WebResult
                                         campaign: CampaignDto {
                                             created_at: campaign.created_at,
                                             gid: campaign.gid,
+                                            total_amount: campaign.total_amount,
+                                            number_of_recipients: campaign.number_of_recipients,
                                         },
                                         page: RecipientPageDto {
                                             page_number: 1,
@@ -80,7 +88,7 @@ pub async fn upload_handler(form: FormData, db: Arc<Mutex<DbConn>>) -> WebResult
                                     };
                                     return Ok(warp::reply::with_status(
                                         json(response_json),
-                                        warp::http::StatusCode::INTERNAL_SERVER_ERROR,
+                                        warp::http::StatusCode::OK,
                                     ));
                                 }
                                 Err(_) => {
@@ -138,14 +146,16 @@ pub async fn get_recipients_handler(
     let db = db.lock().await;
     let db_conn = db.clone();
 
-    let recipients = get_recipients_by_campaign_gid(gid, pagination.page_number, pagination.page_size, &db_conn).await;
+    let recipients =
+        get_recipients_by_campaign_gid(gid, pagination.page_number, pagination.page_size, &db_conn)
+            .await;
     match recipients {
         Ok(recipients) => {
             let response_json = &RecipientsSuccessResponse {
                 status: "Request successful".to_string(),
                 page: RecipientPageDto {
-                    page_number: 1,
-                    page_size: 50,
+                    page_number: pagination.page_number,
+                    page_size: pagination.page_size,
                     recipients: recipients
                         .into_iter()
                         .map(|x| RecipientDto {
@@ -157,7 +167,7 @@ pub async fn get_recipients_handler(
             };
             return Ok(warp::reply::with_status(
                 json(response_json),
-                warp::http::StatusCode::INTERNAL_SERVER_ERROR,
+                warp::http::StatusCode::OK,
             ));
         }
         Err(_) => {
@@ -166,7 +176,119 @@ pub async fn get_recipients_handler(
             };
             return Ok(warp::reply::with_status(
                 json(response_json),
-                warp::http::StatusCode::INSUFFICIENT_STORAGE,
+                warp::http::StatusCode::INTERNAL_SERVER_ERROR,
+            ));
+        }
+    }
+}
+
+pub async fn get_campaign_handler(gid: String, db: Arc<Mutex<DbConn>>) -> WebResult<impl Reply> {
+    let db = db.lock().await;
+    let db_conn = db.clone();
+
+    let campaign = get_campaign_by_gid(gid, &db_conn).await;
+    match campaign {
+        Ok(campaign) => match campaign {
+            Some(campaign) => {
+                let response_json = &CampaignSuccessResponse {
+                    status: "Request successful".to_string(),
+                    campaign: CampaignDto {
+                        created_at: campaign.created_at,
+                        total_amount: campaign.total_amount,
+                        number_of_recipients: campaign.number_of_recipients,
+                        gid: campaign.gid,
+                    },
+                };
+                return Ok(warp::reply::with_status(
+                    json(response_json),
+                    warp::http::StatusCode::OK,
+                ));
+            }
+            None => {
+                let response_json = &BadRequestResponse {
+                    message: "There is no campaign match the provided gid.".to_string(),
+                };
+                return Ok(warp::reply::with_status(
+                    json(response_json),
+                    warp::http::StatusCode::BAD_REQUEST,
+                ));
+            }
+        },
+        Err(_) => {
+            let response_json = &BadRequestResponse {
+                message: "There was a problem processing your request.".to_string(),
+            };
+            return Ok(warp::reply::with_status(
+                json(response_json),
+                warp::http::StatusCode::INTERNAL_SERVER_ERROR,
+            ));
+        }
+    }
+}
+
+pub async fn publish_campaign(gid: String, db: Arc<Mutex<DbConn>>) -> WebResult<impl Reply> {
+    let db = db.lock().await;
+    let db_conn = db.clone();
+    let campaign_info = get_publish_information(gid, &db_conn).await;
+    match campaign_info {
+        Ok(campaign_info) => match campaign_info {
+            Some(campaign_info) => {
+                let ipfs_response = upload_to_ipfs(campaign_info).await;
+                match ipfs_response {
+                    Ok(ipfs_response) => {
+                        let deserialized_response = try_deserialize_pinata_response(&ipfs_response);
+                        match deserialized_response {
+                            Ok(deserialized_response) => {
+                                let response_json = &PublishSuccessResponse {
+                                    status: "Campaign successfully uploaded to IPFS".to_string(),
+                                    cid: deserialized_response.ipfs_hash,
+                                };
+                                return Ok(warp::reply::with_status(
+                                    json(response_json),
+                                    warp::http::StatusCode::OK,
+                                ));
+                            }
+                            Err(_) => {
+                                let response_json = &BadRequestResponse {
+                                    message: "There was an error uploading the campaign to ipfs"
+                                        .to_string(),
+                                };
+                                return Ok(warp::reply::with_status(
+                                    json(response_json),
+                                    warp::http::StatusCode::INTERNAL_SERVER_ERROR,
+                                ));
+                            }
+                        }
+                    }
+                    Err(_) => {
+                        let response_json = &BadRequestResponse {
+                            message: "There was an error uploading the campaign to ipfs"
+                                .to_string(),
+                        };
+                        return Ok(warp::reply::with_status(
+                            json(response_json),
+                            warp::http::StatusCode::INTERNAL_SERVER_ERROR,
+                        ));
+                    }
+                }
+            }
+            None => {
+                let response_json = &BadRequestResponse {
+                    message: "Could not find a campaign with the specified gid".to_string(),
+                };
+                return Ok(warp::reply::with_status(
+                    json(response_json),
+                    warp::http::StatusCode::BAD_REQUEST,
+                ));
+            }
+        },
+        Err(_) => {
+            let response_json = &BadRequestResponse {
+                message: "There was a problem processing your request.".to_string(),
+            };
+            return Ok(warp::reply::with_status(
+                json(response_json),
+                warp::http::StatusCode::INTERNAL_SERVER_ERROR,
             ));
         }
     }

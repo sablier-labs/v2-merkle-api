@@ -14,6 +14,7 @@ mod param;
 mod repository;
 mod response;
 mod utils;
+mod ipfs;
 
 type WebResult<T> = std::result::Result<T, Rejection>;
 
@@ -45,11 +46,23 @@ async fn main() {
         .and(with_db(db_pool.clone()))
         .and_then(handler::get_recipients_handler);
 
+    let get_campaign_route = warp::path!("api" / "campaigns" / String)
+        .and(warp::get())
+        .and(with_db(db_pool.clone()))
+        .and_then(handler::get_campaign_handler);
+
+    let publish_route = warp::path!("api" / "publish" / String)
+        .and(warp::post())
+        .and(with_db(db_pool.clone()))
+        .and_then(handler::publish_campaign);
+
     let routes = health_checker
         .with(cors)
         .with(warp::log("api"))
         .or(upload_route)
-        .or(get_recipients_route);
+        .or(get_recipients_route)
+        .or(get_campaign_route)
+        .or(publish_route);
 
     println!("🚀 Server started successfully");
     warp::serve(routes).run(([0, 0, 0, 0], 8000)).await;
