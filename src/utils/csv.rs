@@ -89,12 +89,12 @@ impl CsvData {
 }
 
 impl CsvRecord {
-    pub fn _to_bytes(&self) -> Vec<u8> {
+    pub fn to_bytes(&self) -> Vec<u8> {
         format!("{}{}", self.address, self.amount).into_bytes()
     }
 
-    pub fn _to_hashed_bytes(&self) -> [u8; 32] {
-        let hashed = Sha256::digest(&self._to_bytes());
+    pub fn to_hashed_bytes(&self) -> [u8; 32] {
+        let hashed = Sha256::digest(&self.to_bytes());
         let mut array = [0u8; 32];
         array.copy_from_slice(&hashed);
         array

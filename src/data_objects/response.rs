@@ -1,6 +1,6 @@
 use crate::{
     data_objects::dto::{CampaignDto, RecipientPageDto},
-    utils::csv::ValidationError,
+    utils::{csv::ValidationError, merkle::SerializedProof},
 };
 use serde::Serialize;
 
@@ -48,6 +48,6 @@ pub struct PublishSuccessResponse {
 
 #[derive(Serialize, Debug)]
 pub struct EligibilityResponse {
-    pub total_amount: f64,
-    pub number_of_recipients: i32,
+    pub index: usize,
+    pub proof: SerializedProof,
 }
