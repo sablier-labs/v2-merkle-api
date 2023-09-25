@@ -3,7 +3,7 @@ use reqwest;
 use serde_json::json;
 
 use crate::data_objects::dto::PersistentCampaignDto;
-use serde::Deserialize;
+use serde::{Deserialize, de::DeserializeOwned};
 
 #[derive(Deserialize, Debug)]
 pub struct PinataSuccess {
@@ -44,4 +44,11 @@ pub async fn upload_to_ipfs(data: PersistentCampaignDto) -> Result<String, reqwe
 
     let text_response = response.text().await?;
     Ok(text_response)
+}
+
+pub async fn download_from_ipfs<T: DeserializeOwned>(cid: &str) -> Result<T, reqwest::Error> {
+    let url = format!("https://cloudflare-ipfs.com/ipfs/{}", cid);
+    let response = reqwest::get(&url).await?;
+    let data: T = response.json().await?;
+    Ok(data)
 }

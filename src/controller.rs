@@ -4,6 +4,7 @@ use tokio::sync::Mutex;
 use warp::{http::Method, Filter};
 
 pub mod campaign_route;
+pub mod eligibility_route;
 pub mod health_route;
 pub mod publish_route;
 pub mod recipients_route;
@@ -23,6 +24,7 @@ pub fn build_routes(
     let campaign = campaign_route::build_route(db_pool.clone());
     let recipient = recipients_route::build_route(db_pool.clone());
     let publish = publish_route::build_route(db_pool.clone());
+    let eligibility = eligibility_route::build_route();
 
     health
         .with(cors)
@@ -31,4 +33,5 @@ pub fn build_routes(
         .or(recipient)
         .or(campaign)
         .or(publish)
+        .or(eligibility)
 }

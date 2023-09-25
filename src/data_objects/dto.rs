@@ -1,4 +1,4 @@
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Debug)]
 pub struct CampaignDto {
@@ -8,7 +8,7 @@ pub struct CampaignDto {
     pub gid: String,
 }
 
-#[derive(Serialize, Debug)]
+#[derive(Deserialize, Serialize, Debug)]
 pub struct RecipientDto {
     pub address: String,
     pub amount: f64,
@@ -21,7 +21,7 @@ pub struct RecipientPageDto {
     pub recipients: Vec<RecipientDto>,
 }
 
-#[derive(Serialize, Debug)]
+#[derive(Deserialize, Serialize, Debug)]
 pub struct PersistentCampaignDto {
     pub total_amount: f64,
     pub number_of_recipients: i32,

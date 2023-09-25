@@ -45,3 +45,9 @@ pub struct PublishSuccessResponse {
     pub status: String,
     pub cid: String,
 }
+
+#[derive(Serialize, Debug)]
+pub struct EligibilityResponse {
+    pub total_amount: f64,
+    pub number_of_recipients: i32,
+}
