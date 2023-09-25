@@ -3,12 +3,12 @@ use std::sync::Arc;
 use tokio::sync::Mutex;
 use warp::{http::Method, Filter};
 
-pub mod campaign_route;
-pub mod eligibility_route;
-pub mod health_route;
-pub mod publish_route;
-pub mod recipients_route;
-pub mod upload_route;
+pub mod campaign;
+pub mod eligibility;
+pub mod health;
+pub mod publish;
+pub mod recipients;
+pub mod upload;
 
 pub fn build_routes(
     db_pool: Arc<Mutex<DbConn>>,
@@ -19,12 +19,12 @@ pub fn build_routes(
         .allow_headers(vec!["content-type"])
         .allow_credentials(true);
 
-    let health = health_route::build_route();
-    let upload = upload_route::build_route(db_pool.clone());
-    let campaign = campaign_route::build_route(db_pool.clone());
-    let recipient = recipients_route::build_route(db_pool.clone());
-    let publish = publish_route::build_route(db_pool.clone());
-    let eligibility = eligibility_route::build_route();
+    let health = health::build_route();
+    let upload = upload::build_route(db_pool.clone());
+    let campaign = campaign::build_route(db_pool.clone());
+    let recipient = recipients::build_route(db_pool.clone());
+    let publish = publish::build_route(db_pool.clone());
+    let eligibility = eligibility::build_route();
 
     health
         .with(cors)
