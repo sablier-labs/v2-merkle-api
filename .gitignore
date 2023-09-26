@@ -1,3 +1,5 @@
-/target
-/migration/target
-.env
+/merkle-api/target
+/merkle-api/migration/target
+/merkle-api/.env
+/merkle-api/Cargo.lock
+/merkle-api/migration/Cargo.lock
