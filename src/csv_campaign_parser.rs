@@ -2,7 +2,7 @@ use csv::Reader;
 use regex::Regex;
 use serde::Serialize;
 use sha2::{Digest, Sha256};
-use std::error::Error;
+use std::{collections::HashMap, error::Error};
 
 #[derive(Serialize, Debug)]
 pub struct ValidationError {
@@ -17,8 +17,10 @@ pub struct CampaignCsvRecord {
 }
 
 pub struct CampaignCsvParsed {
-    pub records: Vec<CampaignCsvRecord>,
+    pub records: HashMap<String, f64>,
     pub validation_errors: Vec<ValidationError>,
+    pub number_of_recipients: usize,
+    pub total_amount: f64,
 }
 
 impl CampaignCsvParsed {
@@ -27,7 +29,9 @@ impl CampaignCsvParsed {
         let address_regex = Regex::new(r"^0x[a-fA-F0-9]{40}$").unwrap();
         let positive_number_regex = Regex::new(r"^[+]?\d*\.?\d+$").unwrap();
         let mut validation_errors = Vec::new();
-        let mut records: Vec<CampaignCsvRecord> = Vec::new();
+        let mut records: HashMap<String, f64> = HashMap::new();
+        let mut total_amount: f64 = 0.0;
+        let mut number_of_recipients: usize = 0;
 
         // Validate the CSV header
         let header = rdr.headers()?;
@@ -72,16 +76,32 @@ impl CampaignCsvParsed {
                 });
             }
 
+            if records.contains_key(address_field) {
+                validation_errors.push(ValidationError {
+                    row: row_index + 2,
+                    message: String::from("Each recipient should have an unique address. This address was already specified in file"),
+                });
+            }
+
+            let amount = amount_field.parse().unwrap();
+
+            if amount == 0.0 {
+                validation_errors.push(ValidationError {
+                    row: row_index + 2,
+                    message: String::from("The amount cannot be 0"),
+                });
+            }
+
             if validation_errors.len() == 0 {
-                let parsed_rec = CampaignCsvRecord {
-                    address: address_field.to_string(),
-                    amount: amount_field.parse().unwrap(),
-                };
-                records.push(parsed_rec);
+                total_amount += amount;
+                number_of_recipients += 1;
+                records.insert(address_field.to_string(), amount);
             }
         }
 
         Ok(CampaignCsvParsed {
+            total_amount,
+            number_of_recipients,
             records,
             validation_errors,
         })

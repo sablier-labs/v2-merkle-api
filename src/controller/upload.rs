@@ -1,10 +1,9 @@
 use crate::{
+    csv_campaign_parser::CampaignCsvParsed,
     data_objects::dto::{CampaignDto, RecipientDto, RecipientPageDto},
     data_objects::response::{BadRequestResponse, UploadSuccessResponse, ValidationErrorResponse},
     database::management::with_db,
-    repository,
-    csv_campaign_parser::CampaignCsvParsed,
-    FormData, StreamExt, TryStreamExt, WebResult,
+    repository, FormData, StreamExt, TryStreamExt, WebResult,
 };
 use bytes::BufMut;
 use csv::ReaderBuilder;
@@ -63,8 +62,13 @@ async fn upload_handler(form: FormData, db: Arc<Mutex<DbConn>>) -> WebResult<imp
                         ));
                     }
 
-                    let campaign_result =
-                        repository::campaign::create_campaign(parsed_csv.records, &db_conn).await;
+                    let campaign_result = repository::campaign::create_campaign(
+                        parsed_csv.records,
+                        parsed_csv.total_amount,
+                        parsed_csv.number_of_recipients,
+                        &db_conn,
+                    )
+                    .await;
                     match campaign_result {
                         Ok(campaign) => {
                             let recipient_result =
