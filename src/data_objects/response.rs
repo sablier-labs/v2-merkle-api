@@ -1,6 +1,7 @@
 use crate::{
+    csv_campaign_parser::ValidationError,
     data_objects::dto::{CampaignDto, RecipientPageDto},
-    utils::{csv::ValidationError, merkle::SerializedProof},
+    utils::merkle::SerializedProof,
 };
 use serde::Serialize;
 

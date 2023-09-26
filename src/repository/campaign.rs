@@ -1,7 +1,7 @@
 use crate::{
     data_objects::dto::{PersistentCampaignDto, RecipientDto},
     database,
-    utils::csv::CsvRecord,
+    csv_campaign_parser::CampaignCsvRecord,
 };
 use chrono::Utc;
 use migration::DbErr;
@@ -9,7 +9,7 @@ use sea_orm::{ActiveModelTrait, ColumnTrait, Condition, DbConn, EntityTrait, Que
 use uuid::Uuid;
 
 pub async fn create_campaign(
-    records: Vec<CsvRecord>,
+    records: Vec<CampaignCsvRecord>,
     db_conn: &DbConn,
 ) -> Result<database::entity::campaign::Model, DbErr> {
     let now = Utc::now();

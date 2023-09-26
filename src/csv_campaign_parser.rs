@@ -11,23 +11,23 @@ pub struct ValidationError {
 }
 
 #[derive(Clone, Debug, Serialize)]
-pub struct CsvRecord {
+pub struct CampaignCsvRecord {
     pub address: String,
     pub amount: f64,
 }
 
-pub struct CsvData {
-    pub records: Vec<CsvRecord>,
+pub struct CampaignCsvParsed {
+    pub records: Vec<CampaignCsvRecord>,
     pub validation_errors: Vec<ValidationError>,
 }
 
-impl CsvData {
-    pub fn build(rdr: Reader<&[u8]>) -> Result<CsvData, Box<dyn Error>> {
+impl CampaignCsvParsed {
+    pub fn build(rdr: Reader<&[u8]>) -> Result<CampaignCsvParsed, Box<dyn Error>> {
         let mut rdr = rdr;
         let address_regex = Regex::new(r"^0x[a-fA-F0-9]{40}$").unwrap();
         let positive_number_regex = Regex::new(r"^[+]?\d*\.?\d+$").unwrap();
         let mut validation_errors = Vec::new();
-        let mut records: Vec<CsvRecord> = Vec::new();
+        let mut records: Vec<CampaignCsvRecord> = Vec::new();
 
         // Validate the CSV header
         let header = rdr.headers()?;
@@ -73,7 +73,7 @@ impl CsvData {
             }
 
             if validation_errors.len() == 0 {
-                let parsed_rec = CsvRecord {
+                let parsed_rec = CampaignCsvRecord {
                     address: address_field.to_string(),
                     amount: amount_field.parse().unwrap(),
                 };
@@ -81,14 +81,14 @@ impl CsvData {
             }
         }
 
-        Ok(CsvData {
+        Ok(CampaignCsvParsed {
             records,
             validation_errors,
         })
     }
 }
 
-impl CsvRecord {
+impl CampaignCsvRecord {
     pub fn to_bytes(&self) -> Vec<u8> {
         format!("{}{}", self.address, self.amount).into_bytes()
     }

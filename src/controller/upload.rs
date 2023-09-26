@@ -1,9 +1,9 @@
 use crate::{
     data_objects::dto::{CampaignDto, RecipientDto, RecipientPageDto},
     data_objects::response::{BadRequestResponse, UploadSuccessResponse, ValidationErrorResponse},
-    repository,
     database::management::with_db,
-    utils::csv::CsvData,
+    repository,
+    csv_campaign_parser::CampaignCsvParsed,
     FormData, StreamExt, TryStreamExt, WebResult,
 };
 use bytes::BufMut;
@@ -19,7 +19,7 @@ use warp::{reply::json, Filter, Reply};
 struct CustomError(String);
 impl warp::reject::Reject for CustomError {}
 
-async fn process_part(part: warp::multipart::Part) -> Result<CsvData, warp::Rejection> {
+async fn process_part(part: warp::multipart::Part) -> Result<CampaignCsvParsed, warp::Rejection> {
     let value = part.stream();
     let data: Vec<u8> = value
         .try_fold(Vec::new(), |mut vec, data| {
@@ -34,8 +34,8 @@ async fn process_part(part: warp::multipart::Part) -> Result<CsvData, warp::Reje
 
     // Create a CSV reader
     let rdr = ReaderBuilder::new().from_reader(s.as_bytes());
-    let parsed_data =
-        CsvData::build(rdr).map_err(|e| warp::reject::custom(CustomError(e.to_string())))?;
+    let parsed_data = CampaignCsvParsed::build(rdr)
+        .map_err(|e| warp::reject::custom(CustomError(e.to_string())))?;
 
     Ok(parsed_data)
 }
@@ -63,11 +63,18 @@ async fn upload_handler(form: FormData, db: Arc<Mutex<DbConn>>) -> WebResult<imp
                         ));
                     }
 
-                    let campaign_result = repository::campaign::create_campaign(parsed_csv.records, &db_conn).await;
+                    let campaign_result =
+                        repository::campaign::create_campaign(parsed_csv.records, &db_conn).await;
                     match campaign_result {
                         Ok(campaign) => {
                             let recipient_result =
-                                repository::recipient::get_recipients_by_campaign_id(campaign.id, 1, 50, &db_conn).await;
+                                repository::recipient::get_recipients_by_campaign_id(
+                                    campaign.id,
+                                    1,
+                                    50,
+                                    &db_conn,
+                                )
+                                .await;
                             match recipient_result {
                                 Ok(recipient) => {
                                     let response_json = &UploadSuccessResponse {

@@ -1,14 +1,12 @@
 use crate::{
+    csv_campaign_parser::CampaignCsvRecord,
     data_objects::{
         dto::PersistentCampaignDto,
         query_param::Eligibility,
         response::{BadRequestResponse, EligibilityResponse},
     },
     services::ipfs::download_from_ipfs,
-    utils::{
-        csv::CsvRecord,
-        merkle::{HashingAlgorithm, SerializedProof},
-    },
+    utils::merkle::{HashingAlgorithm, SerializedProof},
     WebResult,
 };
 use merkle_light::merkle::MerkleTree;
@@ -26,7 +24,7 @@ async fn get_eligibility_handler(eligibility: Eligibility) -> WebResult<impl Rep
                 let bytes: Vec<[u8; 32]> = ipfs_data
                     .recipients
                     .iter()
-                    .map(|r| CsvRecord {
+                    .map(|r| CampaignCsvRecord {
                         address: r.address.clone(),
                         amount: r.amount,
                     })

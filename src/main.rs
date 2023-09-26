@@ -7,6 +7,7 @@ mod repository;
 mod services;
 mod utils;
 mod database;
+mod csv_campaign_parser;
 
 type WebResult<T> = std::result::Result<T, Rejection>;
 
