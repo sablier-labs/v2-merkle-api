@@ -2,7 +2,7 @@ use crate::{
     data_objects::dto::CampaignDto,
     data_objects::response::{BadRequestResponse, CampaignSuccessResponse},
     repository,
-    services::db::with_db,
+    database::management::with_db,
     WebResult,
 };
 

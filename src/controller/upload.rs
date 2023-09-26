@@ -2,7 +2,7 @@ use crate::{
     data_objects::dto::{CampaignDto, RecipientDto, RecipientPageDto},
     data_objects::response::{BadRequestResponse, UploadSuccessResponse, ValidationErrorResponse},
     repository,
-    services::db::with_db,
+    database::management::with_db,
     utils::csv::CsvData,
     FormData, StreamExt, TryStreamExt, WebResult,
 };

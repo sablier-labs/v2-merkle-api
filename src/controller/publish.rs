@@ -1,10 +1,8 @@
 use crate::{
     data_objects::response::{BadRequestResponse, PublishSuccessResponse},
+    database::management::with_db,
     repository,
-    services::{
-        db::with_db,
-        ipfs::{try_deserialize_pinata_response, upload_to_ipfs},
-    },
+    services::ipfs::{try_deserialize_pinata_response, upload_to_ipfs},
     WebResult,
 };
 use sea_orm::DbConn;

@@ -3,7 +3,7 @@ use crate::{
     data_objects::query_param::Pagination,
     data_objects::response::{BadRequestResponse, RecipientsSuccessResponse},
     repository,
-    services::db::with_db,
+    database::management::with_db,
     WebResult,
 };
 

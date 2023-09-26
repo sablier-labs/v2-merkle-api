@@ -12,7 +12,7 @@ type WebResult<T> = std::result::Result<T, Rejection>;
 
 #[tokio::main]
 async fn main() {
-    let db_pool = services::db::establish_connection()
+    let db_pool = database::management::establish_connection()
         .await
         .expect("Failed to create db pool");
 
