@@ -21,7 +21,7 @@ async fn get_recipients_handler(
     let db_conn = db.clone();
 
     let recipients =
-        repository::recipient::get_recipients_by_campaign_gid(gid, pagination.page_number, pagination.page_size, &db_conn)
+        repository::recipient::get_recipients_by_campaign_guid(gid, pagination.page_number, pagination.page_size, &db_conn)
             .await;
     match recipients {
         Ok(recipients) => {

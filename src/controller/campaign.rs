@@ -15,7 +15,7 @@ async fn get_campaign_handler(gid: String, db: Arc<Mutex<DbConn>>) -> WebResult<
     let db = db.lock().await;
     let db_conn = db.clone();
 
-    let campaign = repository::campaign::get_campaign_by_gid(gid, &db_conn).await;
+    let campaign = repository::campaign::get_campaign_by_guid(gid, &db_conn).await;
     match campaign {
         Ok(campaign) => match campaign {
             Some(campaign) => {
@@ -25,7 +25,7 @@ async fn get_campaign_handler(gid: String, db: Arc<Mutex<DbConn>>) -> WebResult<
                         created_at: campaign.created_at,
                         total_amount: campaign.total_amount,
                         number_of_recipients: campaign.number_of_recipients,
-                        gid: campaign.gid,
+                        guid: campaign.guid,
                     },
                 };
                 return Ok(warp::reply::with_status(

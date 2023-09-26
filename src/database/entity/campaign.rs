@@ -8,7 +8,7 @@ pub struct Model {
     #[sea_orm(primary_key)]
     pub id: i32,
     pub created_at: String,
-    pub gid: String,
+    pub guid: String,
     #[sea_orm(column_type = "Double")]
     pub total_amount: f64,
     pub number_of_recipients: i32,

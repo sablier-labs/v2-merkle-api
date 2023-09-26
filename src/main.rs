@@ -3,10 +3,10 @@ use warp::{multipart::FormData, Rejection};
 
 mod controller;
 mod data_objects;
-mod entities;
 mod repository;
 mod services;
 mod utils;
+mod database;
 
 type WebResult<T> = std::result::Result<T, Rejection>;
 

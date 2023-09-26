@@ -74,7 +74,7 @@ async fn upload_handler(form: FormData, db: Arc<Mutex<DbConn>>) -> WebResult<imp
                                         status: "Upload successful".to_string(),
                                         campaign: CampaignDto {
                                             created_at: campaign.created_at,
-                                            gid: campaign.gid,
+                                            guid: campaign.guid,
                                             total_amount: campaign.total_amount,
                                             number_of_recipients: campaign.number_of_recipients,
                                         },

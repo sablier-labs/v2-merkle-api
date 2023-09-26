@@ -19,7 +19,7 @@ impl MigrationTrait for Migration {
                             .primary_key(),
                     )
                     .col(ColumnDef::new(Campaign::CreatedAt).date_time().not_null())
-                    .col(ColumnDef::new(Campaign::Gid).uuid().not_null().unique_key())
+                    .col(ColumnDef::new(Campaign::Guid).uuid().not_null().unique_key())
                     .col(ColumnDef::new(Campaign::TotalAmount).double().not_null())
                     .col(
                         ColumnDef::new(Campaign::NumberOfRecipients)
@@ -43,7 +43,7 @@ pub enum Campaign {
     Table,
     Id,
     CreatedAt,
-    Gid,
+    Guid,
     TotalAmount,
     NumberOfRecipients,
 }
