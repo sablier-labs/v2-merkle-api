@@ -1,20 +1,21 @@
 use crate::{
     data_objects::dto::CampaignDto,
     data_objects::response::{BadRequestResponse, CampaignSuccessResponse},
-    repository::get_campaign_by_gid,
-    WebResult, services::db::with_db,
+    repository,
+    services::db::with_db,
+    WebResult,
 };
 
 use sea_orm::DbConn;
 use std::sync::Arc;
 use tokio::sync::Mutex;
-use warp::{reply::json, Reply, Filter};
+use warp::{reply::json, Filter, Reply};
 
 async fn get_campaign_handler(gid: String, db: Arc<Mutex<DbConn>>) -> WebResult<impl Reply> {
     let db = db.lock().await;
     let db_conn = db.clone();
 
-    let campaign = get_campaign_by_gid(gid, &db_conn).await;
+    let campaign = repository::campaign::get_campaign_by_gid(gid, &db_conn).await;
     match campaign {
         Ok(campaign) => match campaign {
             Some(campaign) => {

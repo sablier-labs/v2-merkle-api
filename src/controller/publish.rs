@@ -1,6 +1,6 @@
 use crate::{
     data_objects::response::{BadRequestResponse, PublishSuccessResponse},
-    repository::get_publish_information,
+    repository,
     services::{
         db::with_db,
         ipfs::{try_deserialize_pinata_response, upload_to_ipfs},
@@ -15,7 +15,7 @@ use warp::{reply::json, Filter, Reply};
 async fn publish_campaign_handler(gid: String, db: Arc<Mutex<DbConn>>) -> WebResult<impl Reply> {
     let db = db.lock().await;
     let db_conn = db.clone();
-    let campaign_info = get_publish_information(gid, &db_conn).await;
+    let campaign_info = repository::campaign::get_publish_information(gid, &db_conn).await;
     match campaign_info {
         Ok(campaign_info) => match campaign_info {
             Some(campaign_info) => {

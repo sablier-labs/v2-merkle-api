@@ -2,7 +2,7 @@ use crate::{
     data_objects::dto::{RecipientDto, RecipientPageDto},
     data_objects::query_param::Pagination,
     data_objects::response::{BadRequestResponse, RecipientsSuccessResponse},
-    repository::get_recipients_by_campaign_gid,
+    repository,
     services::db::with_db,
     WebResult,
 };
@@ -21,7 +21,7 @@ async fn get_recipients_handler(
     let db_conn = db.clone();
 
     let recipients =
-        get_recipients_by_campaign_gid(gid, pagination.page_number, pagination.page_size, &db_conn)
+        repository::recipient::get_recipients_by_campaign_gid(gid, pagination.page_number, pagination.page_size, &db_conn)
             .await;
     match recipients {
         Ok(recipients) => {
