@@ -3,7 +3,7 @@ use crate::{
     data_objects::{
         dto::PersistentCampaignDto,
         query_param::Eligibility,
-        response::{BadRequestResponse, EligibilityResponse},
+        response::{self, BadRequestResponse, EligibilityResponse},
     },
     services::ipfs::download_from_ipfs,
     utils::merkle::{HashingAlgorithm, SerializedProof},
@@ -18,10 +18,8 @@ async fn get_eligibility_handler(eligibility: Eligibility) -> WebResult<impl Rep
         let response_json = &BadRequestResponse {
             message: "There was a problem processing your request.".to_string(),
         };
-        return Ok(warp::reply::with_status(
-            json(response_json),
-            warp::http::StatusCode::INTERNAL_SERVER_ERROR,
-        ));
+
+        return Ok(response::internal_server_error(json(response_json)));
     }
     let ipfs_data = ipfs_data.unwrap();
     let recipient_index = ipfs_data
@@ -33,10 +31,7 @@ async fn get_eligibility_handler(eligibility: Eligibility) -> WebResult<impl Rep
         let response_json = &BadRequestResponse {
             message: "The provided address is not eligible for this campaign".to_string(),
         };
-        return Ok(warp::reply::with_status(
-            json(response_json),
-            warp::http::StatusCode::BAD_REQUEST,
-        ));
+        return Ok(response::bad_request(json(response_json)));
     }
 
     let recipient_index = recipient_index.unwrap();
@@ -58,10 +53,8 @@ async fn get_eligibility_handler(eligibility: Eligibility) -> WebResult<impl Rep
         index: recipient_index,
         proof: serialized_proof,
     };
-    return Ok(warp::reply::with_status(
-        json(response_json),
-        warp::http::StatusCode::OK,
-    ));
+
+    return Ok(response::ok(json(response_json)));
 }
 
 pub fn build_route(

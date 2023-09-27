@@ -1,7 +1,7 @@
 use crate::{
     csv_campaign_parser::CampaignCsvParsed,
     data_objects::dto::{CampaignDto, RecipientDto, RecipientPageDto},
-    data_objects::response::{BadRequestResponse, UploadSuccessResponse, ValidationErrorResponse},
+    data_objects::response::{BadRequestResponse, UploadSuccessResponse, ValidationErrorResponse, self},
     database::management::with_db,
     repository, FormData, StreamExt, TryStreamExt, WebResult,
 };
@@ -52,10 +52,8 @@ async fn upload_handler(form: FormData, db: Arc<Mutex<DbConn>>) -> WebResult<imp
                 let response_json = &BadRequestResponse {
                     message: "There was a problem in csv file parsing process".to_string(),
                 };
-                return Ok(warp::reply::with_status(
-                    json(response_json),
-                    warp::http::StatusCode::INTERNAL_SERVER_ERROR,
-                ));
+
+                return Ok(response::internal_server_error(json(response_json)));
             }
 
             let parsed_csv = parsed_csv.unwrap();
@@ -64,10 +62,7 @@ async fn upload_handler(form: FormData, db: Arc<Mutex<DbConn>>) -> WebResult<imp
                     status: "Invalid csv file.".to_string(),
                     errors: parsed_csv.validation_errors,
                 };
-                return Ok(warp::reply::with_status(
-                    json(response_json),
-                    warp::http::StatusCode::BAD_REQUEST,
-                ));
+                return Ok(response::bad_request(json(response_json)));
             }
             let campaign_result = repository::campaign::create_campaign(
                 parsed_csv.records,
@@ -81,10 +76,7 @@ async fn upload_handler(form: FormData, db: Arc<Mutex<DbConn>>) -> WebResult<imp
                 let response_json = &BadRequestResponse {
                     message: "There was a problem while creating a new campaign".to_string(),
                 };
-                return Ok(warp::reply::with_status(
-                    json(response_json),
-                    warp::http::StatusCode::INTERNAL_SERVER_ERROR,
-                ));
+                return Ok(response::internal_server_error(json(response_json)));
             }
 
             let campaign_result = campaign_result.unwrap();
@@ -100,10 +92,7 @@ async fn upload_handler(form: FormData, db: Arc<Mutex<DbConn>>) -> WebResult<imp
                 let response_json = &BadRequestResponse {
                     message: "There was a problem while fetching the recipients".to_string(),
                 };
-                return Ok(warp::reply::with_status(
-                    json(response_json),
-                    warp::http::StatusCode::INTERNAL_SERVER_ERROR,
-                ));
+                return Ok(response::internal_server_error(json(response_json)));
             }
 
             let recipient_result = recipient_result.unwrap();
@@ -127,20 +116,14 @@ async fn upload_handler(form: FormData, db: Arc<Mutex<DbConn>>) -> WebResult<imp
                         .collect(),
                 },
             };
-            return Ok(warp::reply::with_status(
-                json(response_json),
-                warp::http::StatusCode::OK,
-            ));
+            return Ok(response::ok(json(response_json)));
         }
     }
 
     let response_json = &BadRequestResponse {
         message: "The request form data did not contain file.csv".to_string(),
     };
-    return Ok(warp::reply::with_status(
-        json(response_json),
-        warp::http::StatusCode::BAD_REQUEST,
-    ));
+    return Ok(response::bad_request(json(response_json)));
 }
 
 pub fn build_route(

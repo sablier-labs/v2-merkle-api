@@ -1,3 +1,4 @@
+use crate::data_objects::response;
 use crate::{data_objects::response::GenericResponse, WebResult};
 
 use std::str;
@@ -11,7 +12,8 @@ async fn health_checker_handler() -> WebResult<impl Reply> {
         status: "success".to_string(),
         message: MESSAGE.to_string(),
     };
-    Ok(json(response_json))
+
+    return Ok(response::ok(json(response_json)));
 }
 
 pub fn build_route(

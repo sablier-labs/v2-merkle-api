@@ -4,6 +4,7 @@ use crate::{
     utils::merkle::SerializedProof,
 };
 use serde::Serialize;
+use warp::reply::{Json, WithStatus};
 
 #[derive(Serialize)]
 pub struct GenericResponse {
@@ -51,4 +52,16 @@ pub struct PublishSuccessResponse {
 pub struct EligibilityResponse {
     pub index: usize,
     pub proof: SerializedProof,
+}
+
+pub fn bad_request(json_response: Json) -> WithStatus<warp::reply::Json> {
+    warp::reply::with_status(json_response, warp::http::StatusCode::BAD_REQUEST)
+}
+
+pub fn ok(json_response: Json) -> WithStatus<warp::reply::Json> {
+    warp::reply::with_status(json_response, warp::http::StatusCode::OK)
+}
+
+pub fn internal_server_error(json_response: Json) -> WithStatus<warp::reply::Json> {
+    warp::reply::with_status(json_response, warp::http::StatusCode::INTERNAL_SERVER_ERROR)
 }

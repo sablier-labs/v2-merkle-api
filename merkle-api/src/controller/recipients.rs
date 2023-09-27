@@ -1,7 +1,7 @@
 use crate::{
     data_objects::dto::{RecipientDto, RecipientPageDto},
     data_objects::query_param::Pagination,
-    data_objects::response::{BadRequestResponse, RecipientsSuccessResponse},
+    data_objects::response::{BadRequestResponse, RecipientsSuccessResponse, self},
     database::management::with_db,
     repository, WebResult,
 };
@@ -31,10 +31,7 @@ async fn get_recipients_handler(
         let response_json = &BadRequestResponse {
             message: "There was a problem processing your request.".to_string(),
         };
-        return Ok(warp::reply::with_status(
-            json(response_json),
-            warp::http::StatusCode::INTERNAL_SERVER_ERROR,
-        ));
+        return Ok(response::internal_server_error(json(response_json)));
     }
     let recipients = recipients.unwrap();
     let response_json = &RecipientsSuccessResponse {
@@ -51,10 +48,7 @@ async fn get_recipients_handler(
                 .collect(),
         },
     };
-    return Ok(warp::reply::with_status(
-        json(response_json),
-        warp::http::StatusCode::OK,
-    ));
+    return Ok(response::ok(json(response_json)));
 }
 
 pub fn build_route(

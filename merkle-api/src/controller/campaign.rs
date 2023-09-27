@@ -1,6 +1,6 @@
 use crate::{
     data_objects::dto::CampaignDto,
-    data_objects::response::{BadRequestResponse, CampaignSuccessResponse},
+    data_objects::response::{self, BadRequestResponse, CampaignSuccessResponse},
     database::management::with_db,
     repository, WebResult,
 };
@@ -20,22 +20,18 @@ async fn get_campaign_handler(gid: String, db: Arc<Mutex<DbConn>>) -> WebResult<
         let response_json = BadRequestResponse {
             message: "There was a problem processing your request.".to_string(),
         };
-        return Ok(warp::reply::with_status(
-            json(&response_json),
-            warp::http::StatusCode::INTERNAL_SERVER_ERROR,
-        ));
+
+        return Ok(response::internal_server_error(json(&response_json)));
     }
 
     let campaign = campaign.unwrap();
 
     if let None = campaign {
-        let response_json = BadRequestResponse {
+        let response_json: BadRequestResponse = BadRequestResponse {
             message: "There is no campaign match the provided gid.".to_string(),
         };
-        return Ok(warp::reply::with_status(
-            json(&response_json),
-            warp::http::StatusCode::BAD_REQUEST,
-        ));
+
+        return Ok(response::bad_request(json(&response_json)));
     }
 
     let campaign = campaign.unwrap();
@@ -48,10 +44,7 @@ async fn get_campaign_handler(gid: String, db: Arc<Mutex<DbConn>>) -> WebResult<
             guid: campaign.guid,
         },
     };
-    Ok(warp::reply::with_status(
-        json(&response_json),
-        warp::http::StatusCode::OK,
-    ))
+    return Ok(response::ok(json(&response_json)));
 }
 
 pub fn build_route(

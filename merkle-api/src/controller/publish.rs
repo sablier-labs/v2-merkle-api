@@ -1,5 +1,5 @@
 use crate::{
-    data_objects::response::{BadRequestResponse, PublishSuccessResponse},
+    data_objects::response::{self, BadRequestResponse, PublishSuccessResponse},
     database::management::with_db,
     repository,
     services::ipfs::{try_deserialize_pinata_response, upload_to_ipfs},
@@ -19,10 +19,7 @@ async fn publish_campaign_handler(gid: String, db: Arc<Mutex<DbConn>>) -> WebRes
         let response_json = &BadRequestResponse {
             message: "There was a problem processing your request.".to_string(),
         };
-        return Ok(warp::reply::with_status(
-            json(response_json),
-            warp::http::StatusCode::INTERNAL_SERVER_ERROR,
-        ));
+        return Ok(response::internal_server_error(json(response_json)));
     }
 
     let campaign_info = campaign_info.unwrap();
@@ -31,10 +28,8 @@ async fn publish_campaign_handler(gid: String, db: Arc<Mutex<DbConn>>) -> WebRes
         let response_json = &BadRequestResponse {
             message: "Could not find a campaign with the specified gid".to_string(),
         };
-        return Ok(warp::reply::with_status(
-            json(response_json),
-            warp::http::StatusCode::BAD_REQUEST,
-        ));
+
+        return Ok(response::bad_request(json(response_json)));
     }
 
     let campaign_info = campaign_info.unwrap();
@@ -43,10 +38,7 @@ async fn publish_campaign_handler(gid: String, db: Arc<Mutex<DbConn>>) -> WebRes
         let response_json = &BadRequestResponse {
             message: "There was an error uploading the campaign to ipfs".to_string(),
         };
-        return Ok(warp::reply::with_status(
-            json(response_json),
-            warp::http::StatusCode::INTERNAL_SERVER_ERROR,
-        ));
+        return Ok(response::internal_server_error(json(response_json)));
     }
 
     let ipfs_response = ipfs_response.unwrap();
@@ -56,10 +48,7 @@ async fn publish_campaign_handler(gid: String, db: Arc<Mutex<DbConn>>) -> WebRes
         let response_json = &BadRequestResponse {
             message: "There was an error uploading the campaign to ipfs".to_string(),
         };
-        return Ok(warp::reply::with_status(
-            json(response_json),
-            warp::http::StatusCode::INTERNAL_SERVER_ERROR,
-        ));
+        return Ok(response::internal_server_error(json(response_json)));
     }
 
     let deserialized_response = deserialized_response.unwrap();
@@ -68,10 +57,7 @@ async fn publish_campaign_handler(gid: String, db: Arc<Mutex<DbConn>>) -> WebRes
         status: "Campaign successfully uploaded to IPFS".to_string(),
         cid: deserialized_response.ipfs_hash,
     };
-    return Ok(warp::reply::with_status(
-        json(response_json),
-        warp::http::StatusCode::OK,
-    ));
+    return Ok(response::ok(json(response_json)));
 }
 
 pub fn build_route(
