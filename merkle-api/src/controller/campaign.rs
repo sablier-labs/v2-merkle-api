@@ -16,43 +16,42 @@ async fn get_campaign_handler(gid: String, db: Arc<Mutex<DbConn>>) -> WebResult<
 
     let campaign = repository::campaign::get_campaign_by_guid(gid, &db_conn).await;
 
-    campaign
-        .map(|opt_campaign| {
-            opt_campaign
-                .map(|campaign| {
-                    let response_json = CampaignSuccessResponse {
-                        status: "Request successful".to_string(),
-                        campaign: CampaignDto {
-                            created_at: campaign.created_at,
-                            total_amount: campaign.total_amount,
-                            number_of_recipients: campaign.number_of_recipients,
-                            guid: campaign.guid,
-                        },
-                    };
-                    Ok(warp::reply::with_status(
-                        json(&response_json),
-                        warp::http::StatusCode::OK,
-                    ))
-                })
-                .unwrap_or_else(|| {
-                    let response_json = BadRequestResponse {
-                        message: "There is no campaign match the provided gid.".to_string(),
-                    };
-                    Ok(warp::reply::with_status(
-                        json(&response_json),
-                        warp::http::StatusCode::BAD_REQUEST,
-                    ))
-                })
-        })
-        .unwrap_or_else(|_| {
-            let response_json = BadRequestResponse {
-                message: "There was a problem processing your request.".to_string(),
-            };
-            Ok(warp::reply::with_status(
-                json(&response_json),
-                warp::http::StatusCode::INTERNAL_SERVER_ERROR,
-            ))
-        })
+    if let Err(_) = campaign {
+        let response_json = BadRequestResponse {
+            message: "There was a problem processing your request.".to_string(),
+        };
+        return Ok(warp::reply::with_status(
+            json(&response_json),
+            warp::http::StatusCode::INTERNAL_SERVER_ERROR,
+        ));
+    }
+
+    let campaign = campaign.unwrap();
+
+    if let None = campaign {
+        let response_json = BadRequestResponse {
+            message: "There is no campaign match the provided gid.".to_string(),
+        };
+        return Ok(warp::reply::with_status(
+            json(&response_json),
+            warp::http::StatusCode::BAD_REQUEST,
+        ));
+    }
+
+    let campaign = campaign.unwrap();
+    let response_json = CampaignSuccessResponse {
+        status: "Request successful".to_string(),
+        campaign: CampaignDto {
+            created_at: campaign.created_at,
+            total_amount: campaign.total_amount,
+            number_of_recipients: campaign.number_of_recipients,
+            guid: campaign.guid,
+        },
+    };
+    Ok(warp::reply::with_status(
+        json(&response_json),
+        warp::http::StatusCode::OK,
+    ))
 }
 
 pub fn build_route(
