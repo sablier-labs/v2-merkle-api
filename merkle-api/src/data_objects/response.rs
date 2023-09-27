@@ -1,7 +1,6 @@
 use crate::{
-    csv_campaign_parser::ValidationError,
     data_objects::dto::{CampaignDto, RecipientPageDto},
-    utils::merkle::SerializedProof,
+    utils::{merkle::SerializedProof, csv_validator::ValidationError},
 };
 use serde::Serialize;
 use warp::reply::{Json, WithStatus};

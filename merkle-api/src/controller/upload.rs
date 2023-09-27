@@ -18,7 +18,7 @@ use warp::{reply::json, Filter, Reply};
 struct CustomError(String);
 impl warp::reject::Reject for CustomError {}
 
-async fn process_part(part: warp::multipart::Part) -> Result<CampaignCsvParsed, warp::Rejection> {
+async fn process_part(part: warp::multipart::Part, decimals: u32) -> Result<CampaignCsvParsed, warp::Rejection> {
     let value = part.stream();
     let data: Vec<u8> = value
         .try_fold(Vec::new(), |mut vec, data| {
@@ -33,13 +33,13 @@ async fn process_part(part: warp::multipart::Part) -> Result<CampaignCsvParsed, 
 
     // Create a CSV reader
     let rdr = ReaderBuilder::new().from_reader(s.as_bytes());
-    let parsed_data = CampaignCsvParsed::build(rdr)
+    let parsed_data = CampaignCsvParsed::build(rdr, decimals)
         .map_err(|e| warp::reject::custom(CustomError(e.to_string())))?;
 
     Ok(parsed_data)
 }
 
-async fn upload_handler(form: FormData, db: Arc<Mutex<DbConn>>) -> WebResult<impl Reply> {
+async fn upload_handler(decimals: u32, form: FormData, db: Arc<Mutex<DbConn>>) -> WebResult<impl Reply> {
     let db = db.lock().await;
     let db_conn = db.clone();
     let mut form = form;
@@ -47,7 +47,7 @@ async fn upload_handler(form: FormData, db: Arc<Mutex<DbConn>>) -> WebResult<imp
         let name = part.name();
 
         if name == "file.csv" {
-            let parsed_csv = process_part(part).await;
+            let parsed_csv = process_part(part, decimals).await;
             if let Err(_) = parsed_csv {
                 let response_json = &BadRequestResponse {
                     message: "There was a problem in csv file parsing process".to_string(),
@@ -129,7 +129,7 @@ async fn upload_handler(form: FormData, db: Arc<Mutex<DbConn>>) -> WebResult<imp
 pub fn build_route(
     db: Arc<Mutex<DbConn>>,
 ) -> impl warp::Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
-    warp::path!("api" / "upload")
+    warp::path!("api" / "upload" / u32)
         .and(warp::post())
         .and(warp::multipart::form().max_length(100_000_000))
         .and(with_db(db))
