@@ -2,15 +2,15 @@
 
 use sea_orm::entity::prelude::*;
 
-#[derive(Clone, Debug, PartialEq, DeriveEntityModel)]
+#[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq)]
 #[sea_orm(table_name = "campaign")]
 pub struct Model {
     #[sea_orm(primary_key)]
     pub id: i32,
-    pub created_at: String,
+    pub created_at: i64,
+    #[sea_orm(unique)]
     pub guid: String,
-    #[sea_orm(column_type = "Double")]
-    pub total_amount: f64,
+    pub total_amount: i64,
     pub number_of_recipients: i32,
 }
 

@@ -72,7 +72,8 @@ async fn upload_handler(decimals: u32, form: FormData, db: Arc<Mutex<DbConn>>) -
             )
             .await;
 
-            if let Err(_) = campaign_result {
+            if let Err(err) = campaign_result {
+                println!("{}",err);
                 let response_json = &BadRequestResponse {
                     message: "There was a problem while creating a new campaign".to_string(),
                 };

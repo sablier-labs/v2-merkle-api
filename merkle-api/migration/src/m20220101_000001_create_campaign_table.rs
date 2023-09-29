@@ -18,9 +18,9 @@ impl MigrationTrait for Migration {
                             .auto_increment()
                             .primary_key(),
                     )
-                    .col(ColumnDef::new(Campaign::CreatedAt).date_time().not_null())
-                    .col(ColumnDef::new(Campaign::Guid).uuid().not_null().unique_key())
-                    .col(ColumnDef::new(Campaign::TotalAmount).double().not_null())
+                    .col(ColumnDef::new(Campaign::CreatedAt).big_integer().not_null())
+                    .col(ColumnDef::new(Campaign::Guid).string().not_null().unique_key())
+                    .col(ColumnDef::new(Campaign::TotalAmount).big_integer().not_null())
                     .col(
                         ColumnDef::new(Campaign::NumberOfRecipients)
                             .integer()

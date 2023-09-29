@@ -24,7 +24,7 @@ ethers-rs = "0.2.3"
 
 [dependencies.sea-orm]
 version = "0.12.2"
-features = ["sqlx-sqlite", "runtime-tokio-rustls", "macros"]
+features = ["sqlx-postgres", "runtime-tokio-rustls", "macros"]
 default-features = false
 
 [dependencies.uuid]

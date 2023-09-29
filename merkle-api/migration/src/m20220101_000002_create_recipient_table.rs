@@ -22,7 +22,7 @@ impl MigrationTrait for Migration {
                             .primary_key(),
                     )
                     .col(ColumnDef::new(Recipient::Address).string().not_null())
-                    .col(ColumnDef::new(Recipient::Amount).float().not_null())
+                    .col(ColumnDef::new(Recipient::Amount).big_integer().not_null())
                     .col(ColumnDef::new(Recipient::CampaignId).integer().not_null())
                     .foreign_key(
                         ForeignKey::create()

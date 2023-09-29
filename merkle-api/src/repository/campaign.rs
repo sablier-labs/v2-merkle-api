@@ -1,8 +1,6 @@
-use std::collections::HashMap;
-
 use crate::{
     data_objects::dto::{PersistentCampaignDto, RecipientDto},
-    database,
+    database, csv_campaign_parser::CampaignCsvRecord,
 };
 use chrono::Utc;
 use migration::DbErr;
@@ -10,8 +8,8 @@ use sea_orm::{ActiveModelTrait, ColumnTrait, Condition, DbConn, EntityTrait, Que
 use uuid::Uuid;
 
 pub async fn create_campaign(
-    records: HashMap<String, f64>,
-    total_amount: f64,
+    records: Vec<CampaignCsvRecord>,
+    total_amount: i64,
     number_of_recipients: usize,
     db_conn: &DbConn,
 ) -> Result<database::entity::campaign::Model, DbErr> {
@@ -19,7 +17,7 @@ pub async fn create_campaign(
     let id = Uuid::new_v4();
 
     let campaign = database::entity::campaign::ActiveModel {
-        created_at: Set(now.timestamp().to_string()),
+        created_at: Set(now.timestamp()),
         guid: Set(id.to_string()),
         total_amount: Set(total_amount),
         number_of_recipients: Set(number_of_recipients as i32),
@@ -31,8 +29,8 @@ pub async fn create_campaign(
         records
             .into_iter()
             .map(|rec| database::entity::recipient::ActiveModel {
-                address: Set(rec.0.clone()),
-                amount: Set(rec.1),
+                address: Set(rec.address.clone()),
+                amount: Set(rec.amount),
                 campaign_id: Set(campaign_model.id),
                 ..Default::default()
             });
