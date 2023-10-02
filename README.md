@@ -25,6 +25,7 @@ You will need the following software on your machine:
 Clone this repository and run this to get the api up and running:
 
 ```sh
+$ cd merkle-api
 $ cargo run
 ```
 
@@ -47,6 +48,7 @@ Here's a list of the most frequently needed commands.
 To build the app, you can run this command:
 
 ```sh
+$ cd merkle-api
 $ cargo build
 ```
 
@@ -54,11 +56,13 @@ $ cargo build
 To start the app on localhost, you can run this command:
 
 ```sh
+$ cd merkle-api
 $ cargo run
 ```
 
 To add another crate, you can run this command:
 
 ```sh
+$ cd merkle-api
 $ cargo add crate_name
 ```
