@@ -12,7 +12,7 @@ use tokio::sync::Mutex;
 use warp::{reply::json, Filter, Reply};
 
 async fn get_recipients_handler(
-    gid: String,
+    guid: String,
     pagination: Pagination,
     db: Arc<Mutex<DbConn>>,
 ) -> WebResult<impl Reply> {
@@ -20,7 +20,7 @@ async fn get_recipients_handler(
     let db_conn = db.clone();
 
     let recipients = repository::recipient::get_recipients_by_campaign_guid(
-        gid,
+        guid,
         pagination.page_number,
         pagination.page_size,
         &db_conn,

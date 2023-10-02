@@ -10,11 +10,11 @@ use std::sync::Arc;
 use tokio::sync::Mutex;
 use warp::{reply::json, Filter, Reply};
 
-async fn get_campaign_handler(gid: String, db: Arc<Mutex<DbConn>>) -> WebResult<impl Reply> {
+async fn get_campaign_handler(guid: String, db: Arc<Mutex<DbConn>>) -> WebResult<impl Reply> {
     let db = db.lock().await;
     let db_conn = db.clone();
 
-    let campaign = repository::campaign::get_campaign_by_guid(gid, &db_conn).await;
+    let campaign = repository::campaign::get_campaign_by_guid(guid, &db_conn).await;
 
     if let Err(_) = campaign {
         let response_json = BadRequestResponse {
@@ -28,7 +28,7 @@ async fn get_campaign_handler(gid: String, db: Arc<Mutex<DbConn>>) -> WebResult<
 
     if let None = campaign {
         let response_json: BadRequestResponse = BadRequestResponse {
-            message: "There is no campaign match the provided gid.".to_string(),
+            message: "There is no campaign match the provided guid.".to_string(),
         };
 
         return Ok(response::bad_request(json(&response_json)));

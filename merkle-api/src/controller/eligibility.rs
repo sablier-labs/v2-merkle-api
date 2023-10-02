@@ -52,6 +52,8 @@ async fn get_eligibility_handler(eligibility: Eligibility) -> WebResult<impl Rep
     let response_json = &EligibilityResponse {
         index: recipient_index,
         proof: serialized_proof,
+        proof_hex: proof.lemma().iter().map(|x| hex::encode(x)).collect(),
+        root_hex: hex::encode(tree.root()),
     };
 
     return Ok(response::ok(json(response_json)));

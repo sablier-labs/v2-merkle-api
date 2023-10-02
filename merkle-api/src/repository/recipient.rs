@@ -21,13 +21,13 @@ pub async fn get_recipients_by_campaign_id(
 }
 
 pub async fn get_recipients_by_campaign_guid(
-    campaign_gid: String,
+    campaign_guid: String,
     page_number: u64,
     page_size: u64,
     db_conn: &DbConn,
 ) -> Result<Vec<database::entity::recipient::Model>, DbErr> {
     let campaign = database::entity::campaign::Entity::find()
-        .filter(Condition::any().add(database::entity::campaign::Column::Guid.eq(campaign_gid)))
+        .filter(Condition::any().add(database::entity::campaign::Column::Guid.eq(campaign_guid)))
         .one(db_conn)
         .await?;
 

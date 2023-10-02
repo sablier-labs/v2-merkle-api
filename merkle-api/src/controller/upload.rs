@@ -127,10 +127,12 @@ async fn upload_handler(decimals: u32, form: FormData, db: Arc<Mutex<DbConn>>) -
     return Ok(response::bad_request(json(response_json)));
 }
 
+type DecimalParam = u32;
+
 pub fn build_route(
     db: Arc<Mutex<DbConn>>,
 ) -> impl warp::Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
-    warp::path!("api" / "upload" / u32)
+    warp::path!("api" / "upload" / DecimalParam)
         .and(warp::post())
         .and(warp::multipart::form().max_length(100_000_000))
         .and(with_db(db))
