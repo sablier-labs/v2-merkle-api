@@ -43,7 +43,7 @@ async fn get_recipients_handler(
                 .into_iter()
                 .map(|x| RecipientDto {
                     address: x.address,
-                    amount: x.amount,
+                    amount: x.amount.parse().unwrap(),
                 })
                 .collect(),
         },

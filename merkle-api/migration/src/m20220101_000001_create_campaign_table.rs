@@ -20,7 +20,7 @@ impl MigrationTrait for Migration {
                     )
                     .col(ColumnDef::new(Campaign::CreatedAt).big_integer().not_null())
                     .col(ColumnDef::new(Campaign::Guid).string().not_null().unique_key())
-                    .col(ColumnDef::new(Campaign::TotalAmount).big_integer().not_null())
+                    .col(ColumnDef::new(Campaign::TotalAmount).string().not_null())
                     .col(
                         ColumnDef::new(Campaign::NumberOfRecipients)
                             .integer()

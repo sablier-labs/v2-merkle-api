@@ -40,7 +40,7 @@ async fn get_eligibility_handler(eligibility: Eligibility) -> WebResult<impl Rep
         .iter()
         .map(|r| CampaignCsvRecord {
             address: r.address.clone(),
-            amount: r.amount,
+            amount: r.amount.parse().unwrap(),
         })
         .map(|r| r.to_hashed_bytes())
         .collect();

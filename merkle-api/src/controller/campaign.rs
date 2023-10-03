@@ -39,7 +39,7 @@ async fn get_campaign_handler(guid: String, db: Arc<Mutex<DbConn>>) -> WebResult
         status: "Request successful".to_string(),
         campaign: CampaignDto {
             created_at: campaign.created_at,
-            total_amount: campaign.total_amount,
+            total_amount: campaign.total_amount.parse().unwrap(),
             number_of_recipients: campaign.number_of_recipients,
             guid: campaign.guid,
         },

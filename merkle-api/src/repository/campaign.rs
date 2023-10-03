@@ -1,6 +1,7 @@
 use crate::{
+    csv_campaign_parser::CampaignCsvRecord,
     data_objects::dto::{PersistentCampaignDto, RecipientDto},
-    database, csv_campaign_parser::CampaignCsvRecord,
+    database,
 };
 use chrono::Utc;
 use migration::DbErr;
@@ -9,8 +10,8 @@ use uuid::Uuid;
 
 pub async fn create_campaign(
     records: Vec<CampaignCsvRecord>,
-    total_amount: i64,
-    number_of_recipients: usize,
+    total_amount: u128,
+    number_of_recipients: i32,
     db_conn: &DbConn,
 ) -> Result<database::entity::campaign::Model, DbErr> {
     let now = Utc::now();
@@ -19,25 +20,28 @@ pub async fn create_campaign(
     let campaign = database::entity::campaign::ActiveModel {
         created_at: Set(now.timestamp()),
         guid: Set(id.to_string()),
-        total_amount: Set(total_amount),
-        number_of_recipients: Set(number_of_recipients as i32),
+        total_amount: Set(total_amount.to_string()),
+        number_of_recipients: Set(number_of_recipients),
         ..Default::default()
     };
     let campaign_model = campaign.insert(db_conn).await?;
 
-    let recipient_inputs =
-        records
-            .into_iter()
-            .map(|rec| database::entity::recipient::ActiveModel {
-                address: Set(rec.address.clone()),
-                amount: Set(rec.amount),
-                campaign_id: Set(campaign_model.id),
-                ..Default::default()
-            });
+    for chunk in records.chunks(100) {
+        let recipient_inputs =
+            chunk
+                .into_iter()
+                .map(|rec| database::entity::recipient::ActiveModel {
+                    address: Set(rec.address.clone()),
+                    amount: Set(rec.amount.to_string()),
+                    campaign_id: Set(campaign_model.id),
+                    ..Default::default()
+                });
 
-    let _recipients_model = database::entity::recipient::Entity::insert_many(recipient_inputs)
-        .exec(db_conn)
-        .await?;
+        let _recipients_model = database::entity::recipient::Entity::insert_many(recipient_inputs)
+            .exec(db_conn)
+            .await?;
+    }
+
     Ok(campaign_model)
 }
 
@@ -72,13 +76,13 @@ pub async fn get_publish_information(
                 .all(db_conn)
                 .await?;
             let result = PersistentCampaignDto {
-                total_amount: campaign.total_amount,
+                total_amount: campaign.total_amount.parse().unwrap(),
                 number_of_recipients: campaign.number_of_recipients,
                 recipients: recipients
                     .into_iter()
                     .map(|x| RecipientDto {
                         address: x.address,
-                        amount: x.amount,
+                        amount: x.amount.parse().unwrap(),
                     })
                     .collect(),
             };

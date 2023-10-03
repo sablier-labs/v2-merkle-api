@@ -1,7 +1,9 @@
 use crate::{
     csv_campaign_parser::CampaignCsvParsed,
     data_objects::dto::{CampaignDto, RecipientDto, RecipientPageDto},
-    data_objects::response::{BadRequestResponse, UploadSuccessResponse, ValidationErrorResponse, self},
+    data_objects::response::{
+        self, BadRequestResponse, UploadSuccessResponse, ValidationErrorResponse,
+    },
     database::management::with_db,
     repository, FormData, StreamExt, TryStreamExt, WebResult,
 };
@@ -18,7 +20,10 @@ use warp::{reply::json, Filter, Reply};
 struct CustomError(String);
 impl warp::reject::Reject for CustomError {}
 
-async fn process_part(part: warp::multipart::Part, decimals: u32) -> Result<CampaignCsvParsed, warp::Rejection> {
+async fn process_part(
+    part: warp::multipart::Part,
+    decimals: usize,
+) -> Result<CampaignCsvParsed, warp::Rejection> {
     let value = part.stream();
     let data: Vec<u8> = value
         .try_fold(Vec::new(), |mut vec, data| {
@@ -39,7 +44,11 @@ async fn process_part(part: warp::multipart::Part, decimals: u32) -> Result<Camp
     Ok(parsed_data)
 }
 
-async fn upload_handler(decimals: u32, form: FormData, db: Arc<Mutex<DbConn>>) -> WebResult<impl Reply> {
+async fn upload_handler(
+    decimals: usize,
+    form: FormData,
+    db: Arc<Mutex<DbConn>>,
+) -> WebResult<impl Reply> {
     let db = db.lock().await;
     let db_conn = db.clone();
     let mut form = form;
@@ -64,6 +73,8 @@ async fn upload_handler(decimals: u32, form: FormData, db: Arc<Mutex<DbConn>>) -
                 };
                 return Ok(response::bad_request(json(response_json)));
             }
+            println!("Insert db start: {:?}", std::time::SystemTime::now());
+
             let campaign_result = repository::campaign::create_campaign(
                 parsed_csv.records,
                 parsed_csv.total_amount,
@@ -72,8 +83,10 @@ async fn upload_handler(decimals: u32, form: FormData, db: Arc<Mutex<DbConn>>) -
             )
             .await;
 
+            println!("Insert db stop: {:?}", std::time::SystemTime::now());
+
             if let Err(err) = campaign_result {
-                println!("{}",err);
+                println!("{}", err);
                 let response_json = &BadRequestResponse {
                     message: "There was a problem while creating a new campaign".to_string(),
                 };
@@ -102,7 +115,7 @@ async fn upload_handler(decimals: u32, form: FormData, db: Arc<Mutex<DbConn>>) -
                 campaign: CampaignDto {
                     created_at: campaign_result.created_at,
                     guid: campaign_result.guid,
-                    total_amount: campaign_result.total_amount,
+                    total_amount: campaign_result.total_amount.parse().unwrap(),
                     number_of_recipients: campaign_result.number_of_recipients,
                 },
                 page: RecipientPageDto {
@@ -112,11 +125,13 @@ async fn upload_handler(decimals: u32, form: FormData, db: Arc<Mutex<DbConn>>) -
                         .into_iter()
                         .map(|x| RecipientDto {
                             address: x.address,
-                            amount: x.amount,
+                            amount: x.amount.parse().unwrap(),
                         })
                         .collect(),
                 },
             };
+
+            println!("Before response: {:?}", std::time::SystemTime::now());
             return Ok(response::ok(json(response_json)));
         }
     }
@@ -127,7 +142,7 @@ async fn upload_handler(decimals: u32, form: FormData, db: Arc<Mutex<DbConn>>) -
     return Ok(response::bad_request(json(response_json)));
 }
 
-type DecimalParam = u32;
+type DecimalParam = usize;
 
 pub fn build_route(
     db: Arc<Mutex<DbConn>>,

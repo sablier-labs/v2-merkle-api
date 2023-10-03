@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Serialize, Debug)]
 pub struct CampaignDto {
     pub created_at: i64,
-    pub total_amount: i64,
+    pub total_amount: u128,
     pub number_of_recipients: i32,
     pub guid: String,
 }
@@ -11,7 +11,7 @@ pub struct CampaignDto {
 #[derive(Deserialize, Serialize, Debug)]
 pub struct RecipientDto {
     pub address: String,
-    pub amount: i64,
+    pub amount: String,
 }
 
 #[derive(Serialize, Debug)]
@@ -23,7 +23,7 @@ pub struct RecipientPageDto {
 
 #[derive(Deserialize, Serialize, Debug)]
 pub struct PersistentCampaignDto {
-    pub total_amount: i64,
+    pub total_amount: String,
     pub number_of_recipients: i32,
     pub recipients: Vec<RecipientDto>,
 }

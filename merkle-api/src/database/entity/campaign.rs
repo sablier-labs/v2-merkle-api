@@ -10,7 +10,7 @@ pub struct Model {
     pub created_at: i64,
     #[sea_orm(unique)]
     pub guid: String,
-    pub total_amount: i64,
+    pub total_amount: String,
     pub number_of_recipients: i32,
 }
 

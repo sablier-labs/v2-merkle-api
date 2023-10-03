@@ -1,9 +1,10 @@
 use dotenvy::dotenv;
-use reqwest;
+use reqwest::{self, multipart::{Part, Form}};
+
 use serde_json::json;
 
 use crate::data_objects::dto::PersistentCampaignDto;
-use serde::{Deserialize, de::DeserializeOwned};
+use serde::{de::DeserializeOwned, Deserialize};
 
 #[derive(Deserialize, Debug)]
 pub struct PinataSuccess {
@@ -18,6 +19,7 @@ pub struct PinataSuccess {
 pub fn try_deserialize_pinata_response(
     response_body: &str,
 ) -> Result<PinataSuccess, serde_json::Error> {
+    println!("response body: {}", response_body);
     let success = serde_json::from_str::<PinataSuccess>(response_body)?;
     return Ok(success);
 }
@@ -30,15 +32,21 @@ pub async fn upload_to_ipfs(data: PersistentCampaignDto) -> Result<String, reqwe
 
     let client = reqwest::Client::new();
 
-    let api_endpoint = "https://api.pinata.cloud/pinning/pinJSONToIPFS";
+    let api_endpoint = "https://api.pinata.cloud/pinning/pinFileToIPFS";
 
     let serialized_data = json!(&data);
+    let bytes = serde_json::to_vec(&serialized_data).unwrap(); // Convert the JSON value to bytes
+    let part = Part::bytes(bytes)
+        .file_name("data.json") // Adjust the filename if needed
+        .mime_str("application/json")?; // Set MIME type to application/json
+
+    let form = Form::new().part("file", part);
 
     let response = client
         .post(api_endpoint)
         .header("pinata_api_key", pinata_api_key)
         .header("pinata_secret_api_key", pinata_secret_api_key)
-        .json(&serialized_data)
+        .multipart(form)
         .send()
         .await?;
 
