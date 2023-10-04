@@ -13,8 +13,11 @@ use merkle_light::merkle::MerkleTree;
 use warp::{reply::json, Filter, Reply};
 
 async fn get_eligibility_handler(eligibility: Eligibility) -> WebResult<impl Reply> {
+    println!("Start eligibility: {:?}", std::time::SystemTime::now());
+
     let ipfs_data = download_from_ipfs::<PersistentCampaignDto>(&eligibility.cid).await;
-    if let Err(_) = ipfs_data {
+    if let Err(e) = ipfs_data {
+        println!("{:?}", e);
         let response_json = &BadRequestResponse {
             message: "There was a problem processing your request.".to_string(),
         };
@@ -55,7 +58,7 @@ async fn get_eligibility_handler(eligibility: Eligibility) -> WebResult<impl Rep
         proof_hex: proof.lemma().iter().map(|x| hex::encode(x)).collect(),
         root_hex: hex::encode(tree.root()),
     };
-
+    println!("End eligibility: {:?}", std::time::SystemTime::now());
     return Ok(response::ok(json(response_json)));
 }
 

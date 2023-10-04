@@ -13,6 +13,8 @@ use warp::{reply::json, Filter, Reply};
 async fn publish_campaign_handler(guid: String, db: Arc<Mutex<DbConn>>) -> WebResult<impl Reply> {
     let db = db.lock().await;
     let db_conn = db.clone();
+    println!("Start publish: {:?}", std::time::SystemTime::now());
+
     let campaign_info = repository::campaign::get_publish_information(guid, &db_conn).await;
 
     if let Err(_) = campaign_info {
@@ -57,6 +59,7 @@ async fn publish_campaign_handler(guid: String, db: Arc<Mutex<DbConn>>) -> WebRe
         status: "Campaign successfully uploaded to IPFS".to_string(),
         cid: deserialized_response.ipfs_hash,
     };
+    println!("End publish: {:?}", std::time::SystemTime::now());
     return Ok(response::ok(json(response_json)));
 }
 

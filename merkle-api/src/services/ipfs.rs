@@ -1,10 +1,15 @@
 use dotenvy::dotenv;
-use reqwest::{self, multipart::{Part, Form}};
+use reqwest::{
+    self,
+    multipart::{Form, Part},
+};
 
 use serde_json::json;
 
 use crate::data_objects::dto::PersistentCampaignDto;
-use serde::{de::DeserializeOwned, Deserialize};
+use serde::{de::DeserializeOwned, Deserialize, Serialize};
+
+use super::redis::{get_from_redis, set_in_redis};
 
 #[derive(Deserialize, Debug)]
 pub struct PinataSuccess {
@@ -54,9 +59,26 @@ pub async fn upload_to_ipfs(data: PersistentCampaignDto) -> Result<String, reqwe
     Ok(text_response)
 }
 
-pub async fn download_from_ipfs<T: DeserializeOwned>(cid: &str) -> Result<T, reqwest::Error> {
-    let url = format!("https://cloudflare-ipfs.com/ipfs/{}", cid);
-    let response = reqwest::get(&url).await?;
-    let data: T = response.json().await?;
-    Ok(data)
+pub async fn download_from_ipfs<T: DeserializeOwned + Serialize>(
+    cid: &str,
+) -> Result<T, reqwest::Error> {
+    let redis_data: Option<T> = get_from_redis(cid).await?;
+    if let None = redis_data {
+        println!("no redis data");
+        let ipfs_url = format!("https://cloudflare-ipfs.com/ipfs/{}", cid);
+        let response = reqwest::get(&ipfs_url).await?;
+        let data: T = response.json().await?;
+        let d = set_in_redis(cid, &data).await;
+        if let Err(e) = d {
+            println!("{:?}", e);
+        } else {
+            let d = d.unwrap();
+            println!("{:?}", d);
+        }
+        return Ok(data);
+    }
+
+    println!("redis data");
+    let redis_data = redis_data.unwrap();
+    Ok(redis_data)
 }
