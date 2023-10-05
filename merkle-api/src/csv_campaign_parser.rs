@@ -1,6 +1,6 @@
 use csv::Reader;
 use regex::Regex;
-use serde::Serialize;
+use serde::{Serialize, Deserialize};
 use sha2::{Digest, Sha256};
 use std::{collections::HashSet, error::Error};
 
@@ -9,7 +9,7 @@ use crate::utils::csv_validator::{
     ColumnValidator, ValidationError,
 };
 
-#[derive(Clone, Debug, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct CampaignCsvRecord {
     pub address: String,
     pub amount: u128,

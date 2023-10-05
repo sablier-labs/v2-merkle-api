@@ -25,7 +25,10 @@ pub struct ValidationErrorResponse {
 #[derive(Serialize, Debug)]
 pub struct UploadSuccessResponse {
     pub status: String,
-    pub campaign: CampaignDto,
+    pub root_hex: String,
+    pub total_amount: u128,
+    pub number_of_recipients: i32,
+    pub cid: String,
     pub page: RecipientPageDto,
 }
 

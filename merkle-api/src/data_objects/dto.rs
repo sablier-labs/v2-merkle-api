@@ -2,10 +2,8 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Debug)]
 pub struct CampaignDto {
-    pub created_at: i64,
     pub total_amount: u128,
     pub number_of_recipients: i32,
-    pub guid: String,
 }
 
 #[derive(Deserialize, Serialize, Debug)]

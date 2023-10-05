@@ -65,7 +65,7 @@ pub async fn download_from_ipfs<T: DeserializeOwned + Serialize>(
     let redis_data: Option<T> = get_from_redis(cid).await?;
     if let None = redis_data {
         println!("no redis data");
-        let ipfs_url = format!("https://cloudflare-ipfs.com/ipfs/{}", cid);
+        let ipfs_url = format!("https://aqua-allied-falcon-825.mypinata.cloud/ipfs/{}", cid);
         let response = reqwest::get(&ipfs_url).await?;
         let data: T = response.json().await?;
         let d = set_in_redis(cid, &data).await;

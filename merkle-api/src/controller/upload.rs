@@ -1,19 +1,19 @@
 use crate::{
     csv_campaign_parser::CampaignCsvParsed,
-    data_objects::dto::{CampaignDto, RecipientDto, RecipientPageDto},
-    data_objects::response::{
-        self, BadRequestResponse, UploadSuccessResponse, ValidationErrorResponse,
+    data_objects::dto::{RecipientDto, RecipientPageDto},
+    data_objects::{
+        dto::PersistentCampaignDto,
+        response::{self, BadRequestResponse, UploadSuccessResponse, ValidationErrorResponse},
     },
-    database::management::with_db,
-    repository, FormData, StreamExt, TryStreamExt, WebResult,
+    services::ipfs::{try_deserialize_pinata_response, upload_to_ipfs},
+    utils::merkle::HashingAlgorithm,
+    FormData, StreamExt, TryStreamExt, WebResult,
 };
 use bytes::BufMut;
 use csv::ReaderBuilder;
+use merkle_light::merkle::MerkleTree;
 
-use sea_orm::DbConn;
 use std::str;
-use std::sync::Arc;
-use tokio::sync::Mutex;
 use warp::{reply::json, Filter, Reply};
 
 #[derive(Debug)]
@@ -44,13 +44,7 @@ async fn process_part(
     Ok(parsed_data)
 }
 
-async fn upload_handler(
-    decimals: usize,
-    form: FormData,
-    db: Arc<Mutex<DbConn>>,
-) -> WebResult<impl Reply> {
-    let db = db.lock().await;
-    let db_conn = db.clone();
+async fn upload_handler(decimals: usize, form: FormData) -> WebResult<impl Reply> {
     let mut form = form;
     while let Some(Ok(part)) = form.next().await {
         let name = part.name();
@@ -73,59 +67,58 @@ async fn upload_handler(
                 };
                 return Ok(response::bad_request(json(response_json)));
             }
-            println!("Insert db start: {:?}", std::time::SystemTime::now());
 
-            let campaign_result = repository::campaign::create_campaign(
-                parsed_csv.records,
-                parsed_csv.total_amount,
-                parsed_csv.number_of_recipients,
-                &db_conn,
-            )
+            let ipfs_response = upload_to_ipfs(PersistentCampaignDto {
+                total_amount: parsed_csv.total_amount.to_string(),
+                number_of_recipients: parsed_csv.number_of_recipients,
+                recipients: parsed_csv.records.iter().map(|x| RecipientDto {
+                    address: x.address.clone(),
+                    amount: x.amount.to_string(),
+                }).collect(),
+            })
             .await;
-
-            println!("Insert db stop: {:?}", std::time::SystemTime::now());
-
-            if let Err(err) = campaign_result {
-                println!("{}", err);
+            if let Err(_) = ipfs_response {
                 let response_json = &BadRequestResponse {
-                    message: "There was a problem while creating a new campaign".to_string(),
+                    message: "There was an error uploading the campaign to ipfs".to_string(),
                 };
                 return Ok(response::internal_server_error(json(response_json)));
             }
 
-            let campaign_result = campaign_result.unwrap();
-            let recipient_result = repository::recipient::get_recipients_by_campaign_id(
-                campaign_result.id,
-                1,
-                50,
-                &db_conn,
-            )
-            .await;
+            let ipfs_response = ipfs_response.unwrap();
+            let deserialized_response = try_deserialize_pinata_response(&ipfs_response);
 
-            if let Err(_) = recipient_result {
+            if let Err(_) = deserialized_response {
                 let response_json = &BadRequestResponse {
-                    message: "There was a problem while fetching the recipients".to_string(),
+                    message: "There was an error uploading the campaign to ipfs".to_string(),
                 };
                 return Ok(response::internal_server_error(json(response_json)));
             }
 
-            let recipient_result = recipient_result.unwrap();
+            let deserialized_response = deserialized_response.unwrap();
+
+            let bytes: Vec<[u8; 32]> = parsed_csv
+                .records
+                .iter()
+                .map(|r| r.to_hashed_bytes())
+                .collect();
+            let tree: MerkleTree<[u8; 32], HashingAlgorithm> = MerkleTree::from_iter(bytes);
+
             let response_json = &UploadSuccessResponse {
                 status: "Upload successful".to_string(),
-                campaign: CampaignDto {
-                    created_at: campaign_result.created_at,
-                    guid: campaign_result.guid,
-                    total_amount: campaign_result.total_amount.parse().unwrap(),
-                    number_of_recipients: campaign_result.number_of_recipients,
-                },
+                total_amount: parsed_csv.total_amount,
+                number_of_recipients: parsed_csv.number_of_recipients,
+                root_hex: hex::encode(tree.root()),
+                cid: deserialized_response.ipfs_hash,
                 page: RecipientPageDto {
                     page_number: 1,
                     page_size: 50,
-                    recipients: recipient_result
+                    recipients: parsed_csv
+                        .records
                         .into_iter()
+                        .take(50)
                         .map(|x| RecipientDto {
                             address: x.address,
-                            amount: x.amount.parse().unwrap(),
+                            amount: x.amount.to_string(),
                         })
                         .collect(),
                 },
@@ -145,11 +138,9 @@ async fn upload_handler(
 type DecimalParam = usize;
 
 pub fn build_route(
-    db: Arc<Mutex<DbConn>>,
 ) -> impl warp::Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
     warp::path!("api" / "upload" / DecimalParam)
         .and(warp::post())
         .and(warp::multipart::form().max_length(100_000_000))
-        .and(with_db(db))
         .and_then(upload_handler)
 }
