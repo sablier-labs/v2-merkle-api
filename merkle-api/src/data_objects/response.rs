@@ -1,6 +1,6 @@
 use crate::{
     data_objects::dto::{CampaignDto, RecipientPageDto},
-    utils::{csv_validator::ValidationError, merkle::SerializedProof},
+    utils::csv_validator::ValidationError,
 };
 use serde::Serialize;
 use warp::reply::{Json, WithStatus};
@@ -53,9 +53,7 @@ pub struct PublishSuccessResponse {
 #[derive(Serialize, Debug)]
 pub struct EligibilityResponse {
     pub index: usize,
-    pub proof: SerializedProof,
-    pub proof_hex: String,
-    pub root_hex: String,
+    pub proof: Vec<String>,
 }
 
 pub fn bad_request(json_response: Json) -> WithStatus<warp::reply::Json> {

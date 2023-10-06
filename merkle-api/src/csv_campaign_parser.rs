@@ -1,7 +1,6 @@
 use csv::Reader;
 use regex::Regex;
 use serde::{Serialize, Deserialize};
-use sha2::{Digest, Sha256};
 use std::{collections::HashSet, error::Error};
 
 use crate::utils::csv_validator::{
@@ -96,19 +95,6 @@ impl CampaignCsvParsed {
             records,
             validation_errors,
         })
-    }
-}
-
-impl CampaignCsvRecord {
-    pub fn to_bytes(&self) -> Vec<u8> {
-        format!("{}{}", self.address, self.amount).into_bytes()
-    }
-
-    pub fn to_hashed_bytes(&self) -> [u8; 32] {
-        let hashed = Sha256::digest(&self.to_bytes());
-        let mut array = [0u8; 32];
-        array.copy_from_slice(&hashed);
-        array
     }
 }
 

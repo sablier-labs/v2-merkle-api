@@ -6,12 +6,11 @@ use crate::{
         response::{self, BadRequestResponse, UploadSuccessResponse, ValidationErrorResponse},
     },
     services::ipfs::{try_deserialize_pinata_response, upload_to_ipfs},
-    utils::merkle::HashingAlgorithm,
     FormData, StreamExt, TryStreamExt, WebResult,
 };
 use bytes::BufMut;
 use csv::ReaderBuilder;
-use merkle_light::merkle::MerkleTree;
+use merkle_tree_rs::standard::StandardMerkleTree;
 
 use std::str;
 use warp::{reply::json, Filter, Reply};
@@ -71,10 +70,14 @@ async fn upload_handler(decimals: usize, form: FormData) -> WebResult<impl Reply
             let ipfs_response = upload_to_ipfs(PersistentCampaignDto {
                 total_amount: parsed_csv.total_amount.to_string(),
                 number_of_recipients: parsed_csv.number_of_recipients,
-                recipients: parsed_csv.records.iter().map(|x| RecipientDto {
-                    address: x.address.clone(),
-                    amount: x.amount.to_string(),
-                }).collect(),
+                recipients: parsed_csv
+                    .records
+                    .iter()
+                    .map(|x| RecipientDto {
+                        address: x.address.clone(),
+                        amount: x.amount.to_string(),
+                    })
+                    .collect(),
             })
             .await;
             if let Err(_) = ipfs_response {
@@ -96,18 +99,24 @@ async fn upload_handler(decimals: usize, form: FormData) -> WebResult<impl Reply
 
             let deserialized_response = deserialized_response.unwrap();
 
-            let bytes: Vec<[u8; 32]> = parsed_csv
+            let leaves = parsed_csv
                 .records
                 .iter()
-                .map(|r| r.to_hashed_bytes())
+                .map(|r| vec![r.address.clone(), r.amount.to_string()])
                 .collect();
-            let tree: MerkleTree<[u8; 32], HashingAlgorithm> = MerkleTree::from_iter(bytes);
+
+            println!("Before tree: {:?}", std::time::SystemTime::now());
+
+            let tree =
+                StandardMerkleTree::of(leaves, &["address".to_string(), "uint256".to_string()]);
+
+            println!("After tree: {:?}", std::time::SystemTime::now());
 
             let response_json = &UploadSuccessResponse {
                 status: "Upload successful".to_string(),
                 total_amount: parsed_csv.total_amount,
                 number_of_recipients: parsed_csv.number_of_recipients,
-                root_hex: hex::encode(tree.root()),
+                root_hex: tree.root(),
                 cid: deserialized_response.ipfs_hash,
                 page: RecipientPageDto {
                     page_number: 1,
