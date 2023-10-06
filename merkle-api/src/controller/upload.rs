@@ -102,13 +102,20 @@ async fn upload_handler(decimals: usize, form: FormData) -> WebResult<impl Reply
             let leaves = parsed_csv
                 .records
                 .iter()
-                .map(|r| vec![r.address.clone(), r.amount.to_string()])
+                .enumerate()
+                .map(|(i, r)| vec![i.to_string(), r.address.clone(), r.amount.to_string()])
                 .collect();
 
             println!("Before tree: {:?}", std::time::SystemTime::now());
 
-            let tree =
-                StandardMerkleTree::of(leaves, &["address".to_string(), "uint256".to_string()]);
+            let tree = StandardMerkleTree::of(
+                leaves,
+                &[
+                    "uint".to_string(),
+                    "address".to_string(),
+                    "uint256".to_string(),
+                ],
+            );
 
             println!("After tree: {:?}", std::time::SystemTime::now());
 

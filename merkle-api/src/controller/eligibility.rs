@@ -7,7 +7,7 @@ use crate::{
     services::ipfs::download_from_ipfs,
     WebResult,
 };
-use merkle_tree_rs::standard::{StandardMerkleTree, LeafType};
+use merkle_tree_rs::standard::{LeafType, StandardMerkleTree};
 use warp::{reply::json, Filter, Reply};
 
 async fn get_eligibility_handler(eligibility: Eligibility) -> WebResult<impl Reply> {
@@ -39,10 +39,18 @@ async fn get_eligibility_handler(eligibility: Eligibility) -> WebResult<impl Rep
     let leaves = ipfs_data
         .recipients
         .iter()
-        .map(|r| vec![r.address.clone(), r.amount.to_string()])
+        .enumerate()
+        .map(|(i, r)| vec![i.to_string(), r.address.clone(), r.amount.to_string()])
         .collect();
 
-    let tree = StandardMerkleTree::of(leaves, &["address".to_string(), "uint256".to_string()]);
+    let tree = StandardMerkleTree::of(
+        leaves,
+        &[
+            "uint".to_string(),
+            "address".to_string(),
+            "uint256".to_string(),
+        ],
+    );
     let proof = tree.get_proof(LeafType::Number(recipient_index));
 
     let response_json = &EligibilityResponse {
