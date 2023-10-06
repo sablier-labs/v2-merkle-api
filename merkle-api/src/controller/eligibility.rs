@@ -7,7 +7,7 @@ use crate::{
     services::ipfs::download_from_ipfs,
     WebResult,
 };
-use merkle_tree_rs::standard::{LeafType, StandardMerkleTree};
+use merkle_tree_rs::standard::{LeafType, StandardMerkleTree, StandardMerkleTreeData};
 use warp::{reply::json, Filter, Reply};
 
 async fn get_eligibility_handler(eligibility: Eligibility) -> WebResult<impl Reply> {
@@ -36,21 +36,25 @@ async fn get_eligibility_handler(eligibility: Eligibility) -> WebResult<impl Rep
     }
 
     let recipient_index = recipient_index.unwrap();
-    let leaves = ipfs_data
-        .recipients
-        .iter()
-        .enumerate()
-        .map(|(i, r)| vec![i.to_string(), r.address.clone(), r.amount.to_string()])
-        .collect();
+    // let leaves = ipfs_data
+    //     .recipients
+    //     .iter()
+    //     .enumerate()
+    //     .map(|(i, r)| vec![i.to_string(), r.address.clone(), r.amount.to_string()])
+    //     .collect();
 
-    let tree = StandardMerkleTree::of(
-        leaves,
-        &[
-            "uint".to_string(),
-            "address".to_string(),
-            "uint256".to_string(),
-        ],
-    );
+    // let tree = StandardMerkleTree::of(
+    //     leaves,
+    //     &[
+    //         "uint".to_string(),
+    //         "address".to_string(),
+    //         "uint256".to_string(),
+    //     ],
+    // );
+    let tree_data: StandardMerkleTreeData = serde_json::from_str(&ipfs_data.merkle_tree).unwrap();
+
+    let tree = StandardMerkleTree::load(tree_data);
+
     let proof = tree.get_proof(LeafType::Number(recipient_index));
 
     let response_json = &EligibilityResponse {

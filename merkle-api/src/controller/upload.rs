@@ -67,9 +67,32 @@ async fn upload_handler(decimals: usize, form: FormData) -> WebResult<impl Reply
                 return Ok(response::bad_request(json(response_json)));
             }
 
+            let leaves = parsed_csv
+                .records
+                .iter()
+                .enumerate()
+                .map(|(i, r)| vec![i.to_string(), r.address.clone(), r.amount.to_string()])
+                .collect();
+
+            println!("Before tree: {:?}", std::time::SystemTime::now());
+
+            let tree = StandardMerkleTree::of(
+                leaves,
+                &[
+                    "uint".to_string(),
+                    "address".to_string(),
+                    "uint256".to_string(),
+                ],
+            );
+
+            println!("After tree: {:?}", std::time::SystemTime::now());
+
+            let tree_json = serde_json::to_string(&tree.dump()).unwrap();
+
             let ipfs_response = upload_to_ipfs(PersistentCampaignDto {
                 total_amount: parsed_csv.total_amount.to_string(),
                 number_of_recipients: parsed_csv.number_of_recipients,
+                merkle_tree: tree_json,
                 recipients: parsed_csv
                     .records
                     .iter()
@@ -98,26 +121,6 @@ async fn upload_handler(decimals: usize, form: FormData) -> WebResult<impl Reply
             }
 
             let deserialized_response = deserialized_response.unwrap();
-
-            let leaves = parsed_csv
-                .records
-                .iter()
-                .enumerate()
-                .map(|(i, r)| vec![i.to_string(), r.address.clone(), r.amount.to_string()])
-                .collect();
-
-            println!("Before tree: {:?}", std::time::SystemTime::now());
-
-            let tree = StandardMerkleTree::of(
-                leaves,
-                &[
-                    "uint".to_string(),
-                    "address".to_string(),
-                    "uint256".to_string(),
-                ],
-            );
-
-            println!("After tree: {:?}", std::time::SystemTime::now());
 
             let response_json = &UploadSuccessResponse {
                 status: "Upload successful".to_string(),
