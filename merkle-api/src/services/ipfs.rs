@@ -1,9 +1,13 @@
 use dotenvy::dotenv;
-use reqwest;
+use reqwest::{
+    self,
+    multipart::{Form, Part},
+};
+
 use serde_json::json;
 
 use crate::data_objects::dto::PersistentCampaignDto;
-use serde::{Deserialize, de::DeserializeOwned};
+use serde::{de::DeserializeOwned, Deserialize};
 
 #[derive(Deserialize, Debug)]
 pub struct PinataSuccess {
@@ -30,15 +34,21 @@ pub async fn upload_to_ipfs(data: PersistentCampaignDto) -> Result<String, reqwe
 
     let client = reqwest::Client::new();
 
-    let api_endpoint = "https://api.pinata.cloud/pinning/pinJSONToIPFS";
+    let api_endpoint = "https://api.pinata.cloud/pinning/pinFileToIPFS";
 
     let serialized_data = json!(&data);
+    let bytes = serde_json::to_vec(&serialized_data).unwrap();
+    let part = Part::bytes(bytes)
+        .file_name("data.json")
+        .mime_str("application/json")?;
+
+    let form = Form::new().part("file", part);
 
     let response = client
         .post(api_endpoint)
         .header("pinata_api_key", pinata_api_key)
         .header("pinata_secret_api_key", pinata_secret_api_key)
-        .json(&serialized_data)
+        .multipart(form)
         .send()
         .await?;
 
@@ -46,9 +56,13 @@ pub async fn upload_to_ipfs(data: PersistentCampaignDto) -> Result<String, reqwe
     Ok(text_response)
 }
 
-pub async fn download_from_ipfs<T: DeserializeOwned>(cid: &str) -> Result<T, reqwest::Error> {
-    let url = format!("https://cloudflare-ipfs.com/ipfs/{}", cid);
-    let response = reqwest::get(&url).await?;
+pub async fn download_from_ipfs<T: DeserializeOwned>(
+    cid: &str,
+) -> Result<T, reqwest::Error> {
+    dotenv().ok();
+    let ipfs_gateway = std::env::var("IPFS_GATEWAY").expect("IPFS_GATEWAY must be set");
+    let ipfs_url = format!("{}{}", ipfs_gateway, cid);
+    let response = reqwest::get(&ipfs_url).await?;
     let data: T = response.json().await?;
     Ok(data)
 }

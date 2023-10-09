@@ -14,13 +14,13 @@ pub fn is_valid_eth_address(address: &str) -> bool {
 }
 
 pub trait ColumnValidator {
-    fn validate_cel(&self, cel: &str, row_index: usize, decimals: u32) -> Option<ValidationError>;
+    fn validate_cel(&self, cel: &str, row_index: usize) -> Option<ValidationError>;
     fn validate_header(&self, cel: &str) -> Option<ValidationError>;
 }
 
 pub struct AddressColumnValidator;
 impl ColumnValidator for AddressColumnValidator {
-    fn validate_cel(&self, cel: &str, row_index: usize, _decimals: u32) -> Option<ValidationError> {
+    fn validate_cel(&self, cel: &str, row_index: usize) -> Option<ValidationError> {
         let is_valid = is_valid_eth_address(cel);
         if !is_valid {
             return Some(ValidationError {
@@ -44,16 +44,17 @@ impl ColumnValidator for AddressColumnValidator {
     }
 }
 
-pub struct AmountColumnValidator;
+pub struct AmountColumnValidator {
+    pub regex: Regex,
+}
+
 impl ColumnValidator for AmountColumnValidator {
-    fn validate_cel(&self, cel: &str, row_index: usize, decimals: u32) -> Option<ValidationError> {
-        let pattern = format!(r"^[+]?\d*\.?\d{{0,{}}}$", decimals);
-        let amount_regex = Regex::new(&pattern).unwrap();
-        let is_valid = amount_regex.is_match(cel);
+    fn validate_cel(&self, cel: &str, row_index: usize) -> Option<ValidationError> {
+        let is_valid = self.regex.is_match(cel);
         if !is_valid {
             return Some(ValidationError {
                 row: row_index + 2,
-                message: String::from("Invalid amount. Amount should be a positive number"),
+                message: String::from("Amounts should be positive, in normal notation, with an optional decimal point and a maximum number of decimals as provided by the query parameter."),
             });
         }
 
@@ -84,7 +85,6 @@ impl ColumnValidator for AmountColumnValidator {
 pub fn validate_csv_row(
     row: &StringRecord,
     row_index: usize,
-    decimals: u32,
     validators: &[&dyn ColumnValidator],
 ) -> Vec<ValidationError> {
     let mut errors: Vec<ValidationError> = Vec::new();
@@ -97,7 +97,7 @@ pub fn validate_csv_row(
     }
     for (index, validator) in validators.iter().enumerate() {
         let cel = row[index].trim();
-        let cel_error = validator.validate_cel(cel, row_index, decimals);
+        let cel_error = validator.validate_cel(cel, row_index);
         if let Some(error) = cel_error {
             errors.push(error);
         }
