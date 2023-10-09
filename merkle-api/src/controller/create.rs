@@ -132,7 +132,7 @@ async fn create_handler(params: Create, form: FormData) -> WebResult<impl Reply>
     }
 
     let response_json = &BadRequestResponse {
-        message: "The request form data did not contain data".to_string(),
+        message: "The request form data did not contain recipients csv file".to_string(),
     };
     return Ok(response::bad_request(json(response_json)));
 }
