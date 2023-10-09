@@ -1,7 +1,4 @@
-use crate::{
-    data_objects::dto::{CampaignDto, RecipientPageDto},
-    utils::csv_validator::ValidationError,
-};
+use crate::utils::csv_validator::ValidationError;
 use serde::Serialize;
 use warp::reply::{Json, WithStatus};
 
@@ -25,28 +22,9 @@ pub struct ValidationErrorResponse {
 #[derive(Serialize, Debug)]
 pub struct UploadSuccessResponse {
     pub status: String,
-    pub root_hex: String,
-    pub total_amount: u128,
-    pub number_of_recipients: i32,
-    pub cid: String,
-    pub page: RecipientPageDto,
-}
-
-#[derive(Serialize, Debug)]
-pub struct RecipientsSuccessResponse {
-    pub status: String,
-    pub page: RecipientPageDto,
-}
-
-#[derive(Serialize, Debug)]
-pub struct CampaignSuccessResponse {
-    pub status: String,
-    pub campaign: CampaignDto,
-}
-
-#[derive(Serialize, Debug)]
-pub struct PublishSuccessResponse {
-    pub status: String,
+    pub root: String,
+    pub total: u128,
+    pub recipients: i32,
     pub cid: String,
 }
 
@@ -54,6 +32,8 @@ pub struct PublishSuccessResponse {
 pub struct EligibilityResponse {
     pub index: usize,
     pub proof: Vec<String>,
+    pub address: String,
+    pub amount: String,
 }
 
 pub fn bad_request(json_response: Json) -> WithStatus<warp::reply::Json> {

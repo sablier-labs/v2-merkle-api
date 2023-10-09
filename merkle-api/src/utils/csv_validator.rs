@@ -54,7 +54,7 @@ impl ColumnValidator for AmountColumnValidator {
         if !is_valid {
             return Some(ValidationError {
                 row: row_index + 2,
-                message: String::from("Invalid amount. Amount should be a positive number"),
+                message: String::from("Amounts should be positive, in normal notation, with an optional decimal point and a maximum number of decimals as provided by the query parameter."),
             });
         }
 

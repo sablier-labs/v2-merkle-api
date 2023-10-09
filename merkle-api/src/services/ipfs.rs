@@ -3,13 +3,11 @@ use reqwest::{
     self,
     multipart::{Form, Part},
 };
-use std::io::Cursor;
 
 use serde_json::json;
 
 use crate::data_objects::dto::PersistentCampaignDto;
-use serde::{de::DeserializeOwned, Deserialize, Serialize};
-use zstd::stream::{decode_all, encode_all};
+use serde::{de::DeserializeOwned, Deserialize};
 
 #[derive(Deserialize, Debug)]
 pub struct PinataSuccess {
@@ -24,7 +22,6 @@ pub struct PinataSuccess {
 pub fn try_deserialize_pinata_response(
     response_body: &str,
 ) -> Result<PinataSuccess, serde_json::Error> {
-    println!("response body: {}", response_body);
     let success = serde_json::from_str::<PinataSuccess>(response_body)?;
     return Ok(success);
 }
@@ -40,12 +37,10 @@ pub async fn upload_to_ipfs(data: PersistentCampaignDto) -> Result<String, reqwe
     let api_endpoint = "https://api.pinata.cloud/pinning/pinFileToIPFS";
 
     let serialized_data = json!(&data);
-    let bytes = serde_json::to_vec(&serialized_data).unwrap(); // Convert the JSON value to bytes
-    let compressed_data = encode_all(Cursor::new(bytes), 0).expect("Error at compressing data");
-
-    let part = Part::bytes(compressed_data)
-        .file_name("data.json.zst")
-        .mime_str("application/octet-stream")?;
+    let bytes = serde_json::to_vec(&serialized_data).unwrap();
+    let part = Part::bytes(bytes)
+        .file_name("data.json")
+        .mime_str("application/json")?;
 
     let form = Form::new().part("file", part);
 
@@ -61,16 +56,13 @@ pub async fn upload_to_ipfs(data: PersistentCampaignDto) -> Result<String, reqwe
     Ok(text_response)
 }
 
-pub async fn download_from_ipfs<T: DeserializeOwned + Serialize>(
+pub async fn download_from_ipfs<T: DeserializeOwned>(
     cid: &str,
 ) -> Result<T, reqwest::Error> {
     dotenv().ok();
     let ipfs_gateway = std::env::var("IPFS_GATEWAY").expect("IPFS_GATEWAY must be set");
     let ipfs_url = format!("{}{}", ipfs_gateway, cid);
     let response = reqwest::get(&ipfs_url).await?;
-    let compressed_bytes = response.bytes().await?;
-    let decompressed_data =
-        decode_all(Cursor::new(compressed_bytes)).expect("Error at decompressing file");
-    let data: T = serde_json::from_slice(&decompressed_data).expect("Error at deserialize");
+    let data: T = response.json().await?;
     Ok(data)
 }

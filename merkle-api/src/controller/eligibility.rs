@@ -11,11 +11,8 @@ use merkle_tree_rs::standard::{LeafType, StandardMerkleTree, StandardMerkleTreeD
 use warp::{reply::json, Filter, Reply};
 
 async fn get_eligibility_handler(eligibility: Eligibility) -> WebResult<impl Reply> {
-    println!("Start eligibility: {:?}", std::time::SystemTime::now());
-
     let ipfs_data = download_from_ipfs::<PersistentCampaignDto>(&eligibility.cid).await;
-    if let Err(e) = ipfs_data {
-        println!("{:?}", e);
+    if let Err(_) = ipfs_data {
         let response_json = &BadRequestResponse {
             message: "There was a problem processing your request.".to_string(),
         };
@@ -26,7 +23,7 @@ async fn get_eligibility_handler(eligibility: Eligibility) -> WebResult<impl Rep
     let recipient_index = ipfs_data
         .recipients
         .iter()
-        .position(|r| r.address == eligibility.address);
+        .position(|r| r.address.to_lowercase() == eligibility.address.to_lowercase());
 
     if let None = recipient_index {
         let response_json = &BadRequestResponse {
@@ -36,21 +33,7 @@ async fn get_eligibility_handler(eligibility: Eligibility) -> WebResult<impl Rep
     }
 
     let recipient_index = recipient_index.unwrap();
-    // let leaves = ipfs_data
-    //     .recipients
-    //     .iter()
-    //     .enumerate()
-    //     .map(|(i, r)| vec![i.to_string(), r.address.clone(), r.amount.to_string()])
-    //     .collect();
 
-    // let tree = StandardMerkleTree::of(
-    //     leaves,
-    //     &[
-    //         "uint".to_string(),
-    //         "address".to_string(),
-    //         "uint256".to_string(),
-    //     ],
-    // );
     let tree_data: StandardMerkleTreeData = serde_json::from_str(&ipfs_data.merkle_tree).unwrap();
 
     let tree = StandardMerkleTree::load(tree_data);
@@ -60,8 +43,9 @@ async fn get_eligibility_handler(eligibility: Eligibility) -> WebResult<impl Rep
     let response_json = &EligibilityResponse {
         index: recipient_index,
         proof,
+        address: ipfs_data.recipients[recipient_index].address.clone(),
+        amount: ipfs_data.recipients[recipient_index].amount.clone(),
     };
-    println!("End eligibility: {:?}", std::time::SystemTime::now());
     return Ok(response::ok(json(response_json)));
 }
 

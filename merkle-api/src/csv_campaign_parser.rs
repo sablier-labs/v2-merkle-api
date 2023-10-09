@@ -1,6 +1,6 @@
 use csv::Reader;
 use regex::Regex;
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use std::{collections::HashSet, error::Error};
 
 use crate::utils::csv_validator::{
@@ -23,7 +23,6 @@ pub struct CampaignCsvParsed {
 
 impl CampaignCsvParsed {
     pub fn build(rdr: Reader<&[u8]>, decimals: usize) -> Result<CampaignCsvParsed, Box<dyn Error>> {
-        println!("Validation start: {:?}", std::time::SystemTime::now());
         let mut rdr = rdr;
         let mut validation_errors = Vec::new();
         let mut records: Vec<CampaignCsvRecord> = Vec::new();
@@ -76,18 +75,17 @@ impl CampaignCsvParsed {
             }
 
             if validation_errors.len() == 0 {
+                let address = address_field.to_string().to_lowercase();
                 let padded_amount = pad_value(amount_field, decimals);
                 total_amount += padded_amount;
                 number_of_recipients += 1;
-                unique_addresses.insert(address_field.to_string());
+                unique_addresses.insert(address.clone());
                 records.push(CampaignCsvRecord {
-                    address: address_field.to_string(),
+                    address: address,
                     amount: padded_amount,
                 });
             }
         }
-
-        println!("Validation stop {:?}", std::time::SystemTime::now());
 
         Ok(CampaignCsvParsed {
             total_amount,

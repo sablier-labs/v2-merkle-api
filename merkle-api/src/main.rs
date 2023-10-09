@@ -13,6 +13,5 @@ type WebResult<T> = std::result::Result<T, Rejection>;
 async fn main() {
     let routes = controller::build_routes();
 
-    println!("🚀 Server started successfully");
     warp::serve(routes).run(([0, 0, 0, 0], 8000)).await;
 }

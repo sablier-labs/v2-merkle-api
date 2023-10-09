@@ -1,8 +1,9 @@
 use crate::{
     csv_campaign_parser::CampaignCsvParsed,
-    data_objects::dto::{RecipientDto, RecipientPageDto},
+    data_objects::dto::RecipientDto,
     data_objects::{
         dto::PersistentCampaignDto,
+        query_param::Create,
         response::{self, BadRequestResponse, UploadSuccessResponse, ValidationErrorResponse},
     },
     services::ipfs::{try_deserialize_pinata_response, upload_to_ipfs},
@@ -43,13 +44,13 @@ async fn process_part(
     Ok(parsed_data)
 }
 
-async fn upload_handler(decimals: usize, form: FormData) -> WebResult<impl Reply> {
+async fn create_handler(params: Create, form: FormData) -> WebResult<impl Reply> {
     let mut form = form;
     while let Some(Ok(part)) = form.next().await {
         let name = part.name();
 
-        if name == "file.csv" {
-            let parsed_csv = process_part(part, decimals).await;
+        if name == "data" {
+            let parsed_csv = process_part(part, params.decimals).await;
             if let Err(_) = parsed_csv {
                 let response_json = &BadRequestResponse {
                     message: "There was a problem in csv file parsing process".to_string(),
@@ -74,8 +75,6 @@ async fn upload_handler(decimals: usize, form: FormData) -> WebResult<impl Reply
                 .map(|(i, r)| vec![i.to_string(), r.address.clone(), r.amount.to_string()])
                 .collect();
 
-            println!("Before tree: {:?}", std::time::SystemTime::now());
-
             let tree = StandardMerkleTree::of(
                 leaves,
                 &[
@@ -84,8 +83,6 @@ async fn upload_handler(decimals: usize, form: FormData) -> WebResult<impl Reply
                     "uint256".to_string(),
                 ],
             );
-
-            println!("After tree: {:?}", std::time::SystemTime::now());
 
             let tree_json = serde_json::to_string(&tree.dump()).unwrap();
 
@@ -124,42 +121,27 @@ async fn upload_handler(decimals: usize, form: FormData) -> WebResult<impl Reply
 
             let response_json = &UploadSuccessResponse {
                 status: "Upload successful".to_string(),
-                total_amount: parsed_csv.total_amount,
-                number_of_recipients: parsed_csv.number_of_recipients,
-                root_hex: tree.root(),
+                total: parsed_csv.total_amount,
+                recipients: parsed_csv.number_of_recipients,
+                root: tree.root(),
                 cid: deserialized_response.ipfs_hash,
-                page: RecipientPageDto {
-                    page_number: 1,
-                    page_size: 50,
-                    recipients: parsed_csv
-                        .records
-                        .into_iter()
-                        .take(50)
-                        .map(|x| RecipientDto {
-                            address: x.address,
-                            amount: x.amount.to_string(),
-                        })
-                        .collect(),
-                },
             };
 
-            println!("Before response: {:?}", std::time::SystemTime::now());
             return Ok(response::ok(json(response_json)));
         }
     }
 
     let response_json = &BadRequestResponse {
-        message: "The request form data did not contain file.csv".to_string(),
+        message: "The request form data did not contain data".to_string(),
     };
     return Ok(response::bad_request(json(response_json)));
 }
 
-type DecimalParam = usize;
-
 pub fn build_route(
 ) -> impl warp::Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
-    warp::path!("api" / "upload" / DecimalParam)
+    warp::path!("api" / "create")
         .and(warp::post())
+        .and(warp::query::query::<Create>())
         .and(warp::multipart::form().max_length(100_000_000))
-        .and_then(upload_handler)
+        .and_then(create_handler)
 }

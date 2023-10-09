@@ -29,3 +29,8 @@ pub struct Eligibility {
 fn default_string() -> String {
     "".to_string()
 }
+
+#[derive(Deserialize)]
+pub struct Create {
+    pub decimals: usize,
+}

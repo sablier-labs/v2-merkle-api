@@ -2,7 +2,7 @@ use warp::{http::Method, Filter};
 
 pub mod eligibility;
 pub mod health;
-pub mod upload;
+pub mod create;
 
 pub fn build_routes(
 ) -> impl warp::Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
@@ -13,7 +13,7 @@ pub fn build_routes(
         .allow_credentials(true);
 
     let health = health::build_route();
-    let upload = upload::build_route();
+    let upload = create::build_route();
     let eligibility = eligibility::build_route();
 
     health
