@@ -27,4 +27,4 @@ jobs:
         run:  "npx vercel pull --environment=production --token=$VERCEL_TOKEN --yes"
 
       - name: "Vercel: build project artifacts for ${{env.PACKAGE_NAME}}"
-        run: "yarn vercel build --prod --token=$VERCEL_TOKEN"
+        run: "npx vercel build --prod --token=$VERCEL_TOKEN"
