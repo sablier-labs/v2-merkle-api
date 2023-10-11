@@ -23,7 +23,7 @@ jobs:
         run: npm install -g vercel
 
       - name: "Vercel: pull environment"
-        run: "yarn vercel pull --environment=production --token=$VERCEL_TOKEN --yes"
+        run:  "npx vercel pull --environment=production --token=$VERCEL_TOKEN --yes"
 
       - name: "Vercel: build project artifacts for ${{env.PACKAGE_NAME}}"
         run: "yarn vercel build --prod --token=$VERCEL_TOKEN"
