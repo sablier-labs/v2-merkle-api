@@ -1,0 +1,29 @@
+name: "Merkle API CI"
+
+env:
+  PACKAGE_NAME: "@sablier/v2-merkle-api"
+  VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+  VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+
+on:
+  pull_request:
+    branches:
+      - "main"
+  workflow_call:
+
+jobs:
+  ci:
+    runs-on: "ubuntu-latest"
+    steps:
+      - name: "Setup: checkout the repo"
+        uses: "actions/checkout@v3"
+
+      - name: Install Vercel CLI
+        run: npm install -g vercel
+
+      - name: "Vercel: pull environment"
+        run: "yarn vercel pull --environment=production --token=$VERCEL_TOKEN --yes"
+
+      - name: "Vercel: build project artifacts for ${{env.PACKAGE_NAME}}"
+        run: "yarn vercel build --prod --token=$VERCEL_TOKEN"
