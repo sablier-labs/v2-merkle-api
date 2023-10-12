@@ -26,5 +26,24 @@ jobs:
       - name: "Vercel: pull environment"
         run:  "npx vercel pull --environment=production --token=$VERCEL_TOKEN --yes"
 
-      - name: "Vercel: build project artifacts for ${{env.PACKAGE_NAME}}"
-        run: "npx vercel build --prod --token=$VERCEL_TOKEN"
+      # Set up Rust
+      - name: Setup Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+
+      # Build Rust project
+      - name: Build
+        run: cargo build --release      # Set up Rust
+      - name: Setup Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+
+      # Build Rust project
+      - name: Build
+        run: cargo build --release
