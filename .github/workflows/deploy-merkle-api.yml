@@ -1,4 +1,4 @@
-name: "Merkle API CI"
+name: "Merkle API Deployment on Vercel"
 
 env:
   PACKAGE_NAME: "@sablier/v2-merkle-api"
@@ -7,14 +7,13 @@ env:
   VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
 
 on:
-  pull_request:
-    branches:
-      - "main"
-  workflow_call:
   workflow_dispatch:
 
 jobs:
   ci:
+    uses: "./.github/workflows/ci-merkle-api.yml"
+    secrets: "inherit"
+  deploy:
     runs-on: "ubuntu-latest"
     steps:
       - name: "Setup: checkout the repo"
@@ -28,3 +27,6 @@ jobs:
 
       - name: "Vercel: build project artifacts for ${{env.PACKAGE_NAME}}"
         run: "npx vercel build --prod --token=$VERCEL_TOKEN"
+
+      - name: Deploy to Vercel
+        run: "vercel deploy --prod --token=$VERCEL_TOKEN --prebuilt"
