@@ -34,16 +34,8 @@ jobs:
           toolchain: stable
           override: true
 
-      # Build Rust project
-      - name: Build
-        run: cargo build --release      # Set up Rust
-      - name: Setup Rust
-        uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: stable
-          override: true
-
-      # Build Rust project
-      - name: Build
-        run: cargo build --release
+      # Navigate to Rust project directory and build
+      - name: Build Rust API
+        run: |
+          cd ./merkle-api
+          cargo build --release
