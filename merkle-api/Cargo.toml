@@ -32,4 +32,4 @@ features = [
 
 [[bin]]
 name = "main"
-path = "src/main.rs"
+path = "api/main.rs"
