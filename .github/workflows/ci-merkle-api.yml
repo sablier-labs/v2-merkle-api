@@ -1,5 +1,3 @@
-name: "Merkle API CI"
-
 env:
   PACKAGE_NAME: "@sablier/v2-merkle-api"
   VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
@@ -26,16 +24,5 @@ jobs:
       - name: "Vercel: pull environment"
         run:  "npx vercel pull --environment=production --token=$VERCEL_TOKEN --yes"
 
-      # Set up Rust
-      - name: Setup Rust
-        uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: stable
-          override: true
-
-      # Navigate to Rust project directory and build
-      - name: Build Rust API
-        run: |
-          cd ./merkle-api
-          cargo build --release
+      - name: "Vercel: build project artifacts for ${{env.PACKAGE_NAME}}"
+        run: "npx vercel build --prod --token=$VERCEL_TOKEN"
