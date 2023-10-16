@@ -19,9 +19,12 @@ use warp::Filter;
 
 pub async fn handler(eligibility: Eligibility) -> response::R {
     let ipfs_data = download_from_ipfs::<PersistentCampaignDto>(&eligibility.cid).await;
-    if let Err(_) = ipfs_data {
+    if let Err(error) = ipfs_data {
         let response_json = json!(GeneralErrorResponse {
-            message: String::from("There was a problem processing your request."),
+            message: format!(
+                "There was a problem processing your request. {}",
+                error.to_string()
+            ),
         });
 
         return response::internal_server_error(response_json);
