@@ -1,6 +1,6 @@
 use dotenvy::dotenv;
 use futures::stream::{StreamExt, TryStreamExt};
-use warp::{multipart::FormData, Rejection};
+use warp::{multipart::FormData, Rejection, Filter};
 
 mod controller;
 mod csv_campaign_parser;
@@ -14,10 +14,10 @@ type WebResult<T> = std::result::Result<T, Rejection>;
 async fn main() {
     dotenv().ok();
 
-    let routes = controller::build_routes();
 
     if let Ok(mode) = std::env::var("RUN_MODE") {
         if mode == "LAMBDA" {
+            let routes = warp::any().map(|| "Hello, World!");
             let warp_service = warp::service(routes);
             warp_lambda::run(warp_service)
                 .await
@@ -26,5 +26,6 @@ async fn main() {
         }
     }
 
+    let routes = controller::build_routes();
     warp::serve(routes).run(([0, 0, 0, 0], 8000)).await;
 }
