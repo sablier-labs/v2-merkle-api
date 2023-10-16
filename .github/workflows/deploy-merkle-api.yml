@@ -14,6 +14,7 @@ jobs:
     uses: "./.github/workflows/ci-merkle-api.yml"
     secrets: "inherit"
   deploy:
+    needs: "ci"
     runs-on: "ubuntu-latest"
     steps:
       - name: "Setup: checkout the repo"
