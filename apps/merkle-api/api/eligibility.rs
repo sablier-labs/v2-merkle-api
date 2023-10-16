@@ -1,4 +1,4 @@
-use sablier_merkle_api::controller::health;
+use sablier_merkle_api::controller::eligibility;
 use vercel_runtime as Vercel;
 
 #[tokio::main]
@@ -7,7 +7,7 @@ async fn main() -> Result<(), Vercel::Error> {
 }
 
 pub async fn handler(
-    _req: Vercel::Request,
+    req: Vercel::Request,
 ) -> Result<Vercel::Response<Vercel::Body>, Vercel::Error> {
-    return health::handler_to_vercel().await;
+    return eligibility::handler_to_vercel(req).await;
 }

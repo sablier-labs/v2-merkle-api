@@ -1,15 +1,10 @@
 use crate::utils::csv_validator::ValidationError;
 use serde::Serialize;
-use warp::reply::{Json, WithStatus};
-
-#[derive(Serialize)]
-pub struct GenericResponse {
-    pub status: String,
-    pub message: String,
-}
+use serde_json::Value as Json;
+use warp::reply::WithStatus;
 
 #[derive(Serialize, Debug)]
-pub struct BadRequestResponse {
+pub struct GeneralErrorResponse {
     pub message: String,
 }
 
@@ -23,8 +18,8 @@ pub struct ValidationErrorResponse {
 pub struct UploadSuccessResponse {
     pub status: String,
     pub root: String,
-    pub total: u128,
-    pub recipients: i32,
+    pub total: String,
+    pub recipients: String,
     pub cid: String,
 }
 
@@ -36,14 +31,36 @@ pub struct EligibilityResponse {
     pub amount: String,
 }
 
-pub fn bad_request(json_response: Json) -> WithStatus<warp::reply::Json> {
-    warp::reply::with_status(json_response, warp::http::StatusCode::BAD_REQUEST)
+#[derive(Serialize, Debug)]
+pub struct R {
+    pub status: u16,
+    pub message: Json,
 }
 
-pub fn ok(json_response: Json) -> WithStatus<warp::reply::Json> {
-    warp::reply::with_status(json_response, warp::http::StatusCode::OK)
+pub fn bad_request(json_response: Json) -> R {
+    R {
+        status: warp::http::StatusCode::BAD_REQUEST.as_u16(),
+        message: json_response,
+    }
 }
 
-pub fn internal_server_error(json_response: Json) -> WithStatus<warp::reply::Json> {
-    warp::reply::with_status(json_response, warp::http::StatusCode::INTERNAL_SERVER_ERROR)
+pub fn ok(json_response: Json) -> R {
+    R {
+        status: warp::http::StatusCode::OK.as_u16(),
+        message: json_response,
+    }
+}
+
+pub fn internal_server_error(json_response: Json) -> R {
+    R {
+        status: warp::http::StatusCode::INTERNAL_SERVER_ERROR.as_u16(),
+        message: json_response,
+    }
+}
+
+pub fn to_warp(response: R) -> WithStatus<warp::reply::Json> {
+    warp::reply::with_status(
+        warp::reply::json(&response.message),
+        warp::http::StatusCode::from_u16(response.status).unwrap(),
+    )
 }

@@ -4,7 +4,7 @@ use crate::{
     data_objects::{
         dto::PersistentCampaignDto,
         query_param::Create,
-        response::{self, BadRequestResponse, UploadSuccessResponse, ValidationErrorResponse},
+        response::{self, GeneralErrorResponse, UploadSuccessResponse, ValidationErrorResponse},
     },
     services::ipfs::{try_deserialize_pinata_response, upload_to_ipfs},
     FormData, StreamExt, TryStreamExt, WebResult,
@@ -14,7 +14,10 @@ use csv::ReaderBuilder;
 use merkle_tree_rs::standard::StandardMerkleTree;
 
 use std::str;
-use warp::{reply::json, Filter, Reply};
+
+use serde_json::json;
+use vercel_runtime as Vercel;
+use warp::Filter;
 
 #[derive(Debug)]
 struct CustomError(String);
@@ -44,7 +47,7 @@ async fn process_part(
     Ok(parsed_data)
 }
 
-async fn create_handler(params: Create, form: FormData) -> WebResult<impl Reply> {
+async fn handler(params: Create, form: FormData) -> response::R {
     let mut form = form;
     while let Some(Ok(part)) = form.next().await {
         let name = part.name();
@@ -52,20 +55,21 @@ async fn create_handler(params: Create, form: FormData) -> WebResult<impl Reply>
         if name == "data" {
             let parsed_csv = process_part(part, params.decimals).await;
             if let Err(_) = parsed_csv {
-                let response_json = &BadRequestResponse {
-                    message: "There was a problem in csv file parsing process".to_string(),
-                };
+                let response_json = json!(GeneralErrorResponse {
+                    message: String::from("There was a problem in csv file parsing process"),
+                });
 
-                return Ok(response::internal_server_error(json(response_json)));
+                return response::internal_server_error(response_json);
             }
 
             let parsed_csv = parsed_csv.unwrap();
             if parsed_csv.validation_errors.len() > 0 {
-                let response_json = &ValidationErrorResponse {
-                    status: "Invalid csv file.".to_string(),
+                let response_json = json!(ValidationErrorResponse {
+                    status: String::from("Invalid csv file."),
                     errors: parsed_csv.validation_errors,
-                };
-                return Ok(response::bad_request(json(response_json)));
+                });
+
+                return response::bad_request(response_json);
             }
 
             let leaves = parsed_csv
@@ -101,40 +105,63 @@ async fn create_handler(params: Create, form: FormData) -> WebResult<impl Reply>
             })
             .await;
             if let Err(_) = ipfs_response {
-                let response_json = &BadRequestResponse {
-                    message: "There was an error uploading the campaign to ipfs".to_string(),
-                };
-                return Ok(response::internal_server_error(json(response_json)));
+                let response_json = json!(GeneralErrorResponse {
+                    message: String::from("There was an error uploading the campaign to ipfs"),
+                });
+
+                return response::internal_server_error(response_json);
             }
 
             let ipfs_response = ipfs_response.unwrap();
             let deserialized_response = try_deserialize_pinata_response(&ipfs_response);
 
             if let Err(_) = deserialized_response {
-                let response_json = &BadRequestResponse {
-                    message: "There was an error uploading the campaign to ipfs".to_string(),
-                };
-                return Ok(response::internal_server_error(json(response_json)));
+                let response_json = json!(GeneralErrorResponse {
+                    message: String::from("There was an error uploading the campaign to ipfs"),
+                });
+
+                return response::internal_server_error(response_json);
             }
 
             let deserialized_response = deserialized_response.unwrap();
 
-            let response_json = &UploadSuccessResponse {
+            let response_json = json!(UploadSuccessResponse {
                 status: "Upload successful".to_string(),
-                total: parsed_csv.total_amount,
-                recipients: parsed_csv.number_of_recipients,
+                total: parsed_csv.total_amount.to_string(),
+                recipients: parsed_csv.number_of_recipients.to_string(),
                 root: tree.root(),
                 cid: deserialized_response.ipfs_hash,
-            };
+            });
 
-            return Ok(response::ok(json(response_json)));
+            return response::ok(response_json);
         }
     }
 
-    let response_json = &BadRequestResponse {
+    let response_json = json!(GeneralErrorResponse {
         message: "The request form data did not contain recipients csv file".to_string(),
-    };
-    return Ok(response::bad_request(json(response_json)));
+    });
+    return response::bad_request(response_json);
+}
+
+pub async fn handler_to_warp(params: Create, form: FormData) -> WebResult<impl warp::Reply> {
+    let result = handler(params, form).await;
+    return Ok(response::to_warp(result));
+}
+
+pub async fn handler_to_vercel(
+    _req: Vercel::Request,
+) -> Result<Vercel::Response<Vercel::Body>, Vercel::Error> {
+    let result = json!({
+        "status": "to do".to_string(),
+        "message":"TO DO: convert feature to also work with vercel".to_string(),
+    });
+
+    let prepared = response::ok(result);
+
+    return Ok(Vercel::Response::builder()
+        .status(Vercel::StatusCode::OK)
+        .header("content-type", "application/json")
+        .body(prepared.message.to_string().into())?);
 }
 
 pub fn build_route(
@@ -143,5 +170,5 @@ pub fn build_route(
         .and(warp::post())
         .and(warp::query::query::<Create>())
         .and(warp::multipart::form().max_length(100_000_000))
-        .and_then(create_handler)
+        .and_then(handler_to_warp)
 }
