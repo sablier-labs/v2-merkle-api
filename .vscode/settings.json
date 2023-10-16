@@ -1,7 +1,0 @@
-{
-    "rust-analyzer.linkedProjects": [
-        "./merkle-api/Cargo.toml",
-    ],
-    "rust-analyzer.showUnlinkedFileNotification": false,
-    "editor.inlayHints.enabled": "offUnlessPressed"
-}

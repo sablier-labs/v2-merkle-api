@@ -24,7 +24,9 @@ jobs:
         run: npm install -g vercel
 
       - name: "Vercel: pull environment"
-        run:  "npx vercel pull --environment=production --token=$VERCEL_TOKEN --yes"
+        run: "npx vercel pull --environment=production --token=$VERCEL_TOKEN --yes"
 
       - name: "Vercel: build project artifacts for ${{env.PACKAGE_NAME}}"
         run: "npx vercel build --prod --token=$VERCEL_TOKEN"
+## TO DO: not using CI/CD at the moment, build is happening on vercel
+## Move back later

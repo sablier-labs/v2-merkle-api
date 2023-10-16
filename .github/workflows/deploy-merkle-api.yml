@@ -27,3 +27,5 @@ jobs:
 
       - name: Deploy to Vercel
         run: "vercel deploy --prod --prebuilt --token=$VERCEL_TOKEN"
+## TO DO: not using CI/CD at the moment, build is happening on vercel
+## Move back later

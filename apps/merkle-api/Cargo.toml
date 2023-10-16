@@ -1,7 +1,12 @@
 [package]
-name = "merkle-api"
+name = "sablier_merkle_api"
 version = "0.1.0"
 edition = "2021"
+
+[[bin]]
+name = "health"
+path = "api/health.rs"
+
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -30,7 +35,3 @@ features = [
     "fast-rng",          # Use a faster (but still sufficiently random) RNG
     "macro-diagnostics", # Enable better diagnostics for compile-time UUIDs
 ]
-
-[[bin]]
-name = "handler"
-path = "api/handler.rs"
