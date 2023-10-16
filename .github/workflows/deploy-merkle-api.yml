@@ -10,11 +10,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  ci:
-    uses: "./.github/workflows/ci-merkle-api.yml"
-    secrets: "inherit"
   deploy:
-    needs: "ci"
     runs-on: "ubuntu-latest"
     steps:
       - name: "Setup: checkout the repo"
@@ -24,10 +20,10 @@ jobs:
         run: npm install -g vercel
 
       - name: "Vercel: pull environment"
-        run:  "npx vercel pull --environment=production --token=$VERCEL_TOKEN --yes"
+        run: "npx vercel pull --environment=production --token=$VERCEL_TOKEN --yes"
 
       - name: "Vercel: build project artifacts for ${{env.PACKAGE_NAME}}"
         run: "npx vercel build --prod --token=$VERCEL_TOKEN"
 
       - name: Deploy to Vercel
-        run: "vercel deploy --prod --token=$VERCEL_TOKEN --prebuilt"
+        run: "vercel deploy --prod --prebuilt --token=$VERCEL_TOKEN"

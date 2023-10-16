@@ -1,4 +1,4 @@
-/merkle-api/target
-/merkle-api/.env
-/merkle-api/Cargo.lock
-/merkle-api/migration/Cargo.lock
+Cargo.lock
+target
+.env
+.vercel
