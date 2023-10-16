@@ -52,7 +52,6 @@ $ cd merkle-api
 $ cargo build
 ```
 
-
 To start the app on localhost, you can run this command:
 
 ```sh
@@ -65,4 +64,26 @@ To add another crate, you can run this command:
 ```sh
 $ cd merkle-api
 $ cargo add crate_name
+```
+
+## API
+
+Do not add trailing slashes to the API endpoints.
+
+### Health
+
+```
+GET https://.../api/health
+```
+
+### Eligibility
+
+```
+GET https://.../api/eligibility?address=...&cid=...
+```
+
+### Create
+
+```
+POST https://.../api/create?decimals=... + FORM_DATA{file: "a csv file with addresses and amounts"}
 ```

@@ -36,6 +36,7 @@ merkle-tree-rs = "0.1.0"
 url = "2.4.1"
 vercel_runtime = "1.1.0"
 warp_lambda = "0.1.4"
+multipart = "0.18.0"
 
 [dependencies.uuid]
 version = "1.4.1"

@@ -1,6 +1,7 @@
 use crate::utils::csv_validator::ValidationError;
 use serde::Serialize;
 use serde_json::Value as Json;
+use vercel_runtime as Vercel;
 use warp::reply::WithStatus;
 
 #[derive(Serialize, Debug)]
@@ -63,4 +64,11 @@ pub fn to_warp(response: R) -> WithStatus<warp::reply::Json> {
         warp::reply::json(&response.message),
         warp::http::StatusCode::from_u16(response.status).unwrap(),
     )
+}
+
+pub fn to_vercel(response: R) -> Result<Vercel::Response<Vercel::Body>, Vercel::Error> {
+    return Ok(Vercel::Response::builder()
+        .status(response.status)
+        .header("content-type", "application/json")
+        .body(response.message.to_string().into())?);
 }

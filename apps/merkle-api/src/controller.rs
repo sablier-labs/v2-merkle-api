@@ -19,6 +19,6 @@ pub fn build_routes(
     health
         .with(cors)
         .with(warp::log("api"))
-        .or(create)
         .or(eligibility)
+        .or(create)
 }

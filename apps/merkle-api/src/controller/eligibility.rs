@@ -65,11 +65,18 @@ pub async fn handler_to_warp(eligibility: Eligibility) -> WebResult<impl warp::R
 pub async fn handler_to_vercel(
     req: Vercel::Request,
 ) -> Result<Vercel::Response<Vercel::Body>, Vercel::Error> {
+    // ------------------------------------------------------------
+    // Extract query parameters from the URL: address, cid
+    // ------------------------------------------------------------
+
     let url = Url::parse(&req.uri().to_string()).unwrap();
     let query: HashMap<String, String> = url.query_pairs().into_owned().collect();
 
-    let fallback = String::from("");
+    // ------------------------------------------------------------
+    //Format arguments for the generic handler
+    // ------------------------------------------------------------
 
+    let fallback = String::from("");
     let params = Eligibility {
         address: query.get("address").unwrap_or_else(|| &fallback).clone(),
         cid: query.get("cid").unwrap_or_else(|| &fallback).clone(),

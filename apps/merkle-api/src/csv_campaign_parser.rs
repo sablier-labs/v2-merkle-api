@@ -21,8 +21,13 @@ pub struct CampaignCsvParsed {
     pub total_amount: u128,
 }
 
+// TO DO: Check why this requires Send + Sync to work. Error happening in the create handler.
+
 impl CampaignCsvParsed {
-    pub fn build(rdr: Reader<&[u8]>, decimals: usize) -> Result<CampaignCsvParsed, Box<dyn Error>> {
+    pub fn build(
+        rdr: Reader<&[u8]>,
+        decimals: usize,
+    ) -> Result<CampaignCsvParsed, Box<dyn Error + Send + Sync>> {
         let mut rdr = rdr;
         let mut validation_errors = Vec::new();
         let mut records: Vec<CampaignCsvRecord> = Vec::new();
