@@ -30,6 +30,12 @@ jobs:
       - name: Install OpenSSL dependencies
         run: sudo apt-get install -y libssl-dev pkg-config
 
+      - name: Set Cross-compilation environment variables
+        run: |
+          echo "CC=x86_64-linux-musl-gcc" >> $GITHUB_ENV
+          echo "AR=x86_64-linux-musl-ar" >> $GITHUB_ENV
+          echo "RANLIB=x86_64-linux-musl-ranlib" >> $GITHUB_ENV
+
       - name: Cross-compile OpenSSL
         run: |
           wget https://www.openssl.org/source/openssl-1.1.1l.tar.gz
