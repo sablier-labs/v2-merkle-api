@@ -22,6 +22,13 @@ jobs:
       - name: "Setup: checkout the repo"
         uses: "actions/checkout@v3"
 
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          target: x86_64-unknown-linux-musl
+          override: true
+
       - name: Install Vercel CLI
         run: npm install -g vercel
 
