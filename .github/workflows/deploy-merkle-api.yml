@@ -27,6 +27,9 @@ jobs:
           sudo apt install musl-tools
           rustup target add x86_64-unknown-linux-musl
 
+      - name: Install OpenSSL dependencies
+        run: sudo apt-get install -y libssl-dev pkg-config
+
       - name: Install Vercel CLI
         run: npm install -g vercel
 
