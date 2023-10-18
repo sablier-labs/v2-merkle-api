@@ -149,7 +149,9 @@ pub async fn handler_to_vercel(
 
     if let None = decimals {
         let response_json = json!(GeneralErrorResponse {
-            message: String::from("The provided address is not eligible for this campaign"),
+            message: String::from(
+                "Decimals query parameter is mandatory in order to create a valid campaign!"
+            ),
         });
 
         return response::to_vercel(response::ok(response_json));
@@ -217,10 +219,7 @@ pub async fn handler_to_vercel(
     };
 
     let result = handler(create, &buffer).await;
-    return Ok(Vercel::Response::builder()
-        .status(Vercel::StatusCode::OK)
-        .header("content-type", "application/json")
-        .body(result.message.to_string().into())?);
+    return response::to_vercel(result);
 }
 
 pub fn build_route(

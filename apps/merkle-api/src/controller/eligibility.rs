@@ -19,12 +19,9 @@ use warp::Filter;
 
 pub async fn handler(eligibility: Eligibility) -> response::R {
     let ipfs_data = download_from_ipfs::<PersistentCampaignDto>(&eligibility.cid).await;
-    if let Err(error) = ipfs_data {
+    if let Err(_) = ipfs_data {
         let response_json = json!(GeneralErrorResponse {
-            message: format!(
-                "There was a problem processing your request. {}",
-                error.to_string()
-            ),
+            message: format!("There was a problem processing your request: Bad CID provided"),
         });
 
         return response::internal_server_error(response_json);
@@ -87,10 +84,7 @@ pub async fn handler_to_vercel(
 
     let result = handler(params).await;
 
-    return Ok(Vercel::Response::builder()
-        .status(Vercel::StatusCode::OK)
-        .header("content-type", "application/json")
-        .body(result.message.to_string().into())?);
+    return response::to_vercel(result);
 }
 
 pub fn build_route(

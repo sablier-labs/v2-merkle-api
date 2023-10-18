@@ -25,10 +25,7 @@ pub async fn handler_to_warp() -> WebResult<impl warp::Reply> {
 pub async fn handler_to_vercel() -> Result<Vercel::Response<Vercel::Body>, Vercel::Error> {
     let result = handler().await;
 
-    return Ok(Vercel::Response::builder()
-        .status(Vercel::StatusCode::OK)
-        .header("content-type", "application/json")
-        .body(result.message.to_string().into())?);
+    return response::to_vercel(result);
 }
 
 pub fn build_route(

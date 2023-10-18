@@ -1,0 +1,7 @@
+[build]
+target = "x86_64-unknown-linux-musl"
+
+# Uncomment below to support Rust cross-compilation from macOS to Linux
+# Follow these installation instructions: https://github.com/chinedufn/cross-compile-rust-from-mac-to-linux
+# [target.x86_64-unknown-linux-musl]
+# linker = "x86_64-unknown-linux-gnu-gcc"
