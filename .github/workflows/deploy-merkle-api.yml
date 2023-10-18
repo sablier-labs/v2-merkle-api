@@ -24,8 +24,9 @@ jobs:
 
       - name: Install Rust target
         run: |
+          sudo apt update
           sudo apt install musl-tools
-          rustup target add x86_64-unknown-linux-musl
+          rustup target add x86_64-unknown-linux-gnu
 
       - name: Install OpenSSL dependencies
         run: sudo apt-get install -y libssl-dev pkg-config
