@@ -27,30 +27,6 @@ jobs:
           sudo apt install musl-tools
           rustup target add x86_64-unknown-linux-musl
 
-      - name: Install OpenSSL dependencies
-        run: sudo apt-get install -y libssl-dev pkg-config
-
-      - name: Set Cross-compilation environment variables
-        run: |
-          echo "CC=x86_64-linux-musl-gcc" >> $GITHUB_ENV
-          echo "AR=x86_64-linux-musl-ar" >> $GITHUB_ENV
-          echo "RANLIB=x86_64-linux-musl-ranlib" >> $GITHUB_ENV
-
-      - name: Cross-compile OpenSSL
-        run: |
-          wget https://www.openssl.org/source/openssl-1.1.1l.tar.gz
-          tar xzf openssl-1.1.1l.tar.gz
-          cd openssl-1.1.1l
-          ./Configure no-shared no-async --prefix=$HOME/musl-openssl --cross-compile-prefix=x86_64-linux-musl- linux-x86_64
-          make && make install
-
-      - name: Set environment variables for OpenSSL
-        run: |
-          echo "OPENSSL_DIR=$HOME/musl-openssl" >> $GITHUB_ENV
-          echo "OPENSSL_STATIC=yes" >> $GITHUB_ENV
-          echo "PKG_CONFIG_PATH=$HOME/musl-openssl/lib/pkgconfig" >> $GITHUB_ENV
-          echo "PKG_CONFIG_ALLOW_CROSS=1" >> $GITHUB_ENV
-
       - name: Install Vercel CLI
         run: npm install -g vercel
 
