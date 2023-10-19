@@ -22,11 +22,50 @@ You will need the following software on your machine:
 
 ### Set Up
 
-Clone this repository and run this to get the api up and running:
+Clone this repository. In the app/merkle-api directory you will find the .env.example file that contains 3 environment variables:
 
 ```sh
-$ cd merkle-api
-$ cargo run
+PINATA_API_KEI=
+PINATA_SECRET_API_KEY=
+IPFS_GATEWAY=
+```
+
+In order to make the API work properly you will need to create a .env file at the same level with the .env.example. After a campaign is validated and created we use Pinata to upload and in the file to IPFS. In order to obtain the PINATA_API_KEY and PINATA_SECRET_API_KEY follow this steps:
+1.  https://app.pinata.cloud/
+2.  Log In/ Sign Up
+3.  Select the API Keys tab
+4.  Select New Key
+5.  The key should have the permissions: pinFileToIPFS, pinJSONToIPFS
+6.  Set a name for the key
+7.  Click Create Key
+8.  From the popup you can take the API Key and the API Secrete and fill .env with those values
+The IPFS_GATEWAY= var can be any correct ipfs gateway but we recommend using a private one(Pinata offers this as well).
+For more details about the interactions with ipfs check apps/merkle-api/src/services/ipfs.rs
+
+We are using Vercel as hosting environment and that is why we have separate bins for each endpoint. In order to run locally you can either use:
+```sh
+$ vercel dev
+```
+to simulate locally what is happening in the cloud env or:
+```sh
+$ cd apps/merkle-api
+$ cargo run --bin sablier_merkle_api
+```
+that will run a classic WEB API using the src/main.rs file.
+Even tough we are using cargo work spaces the cargo run command should be run from inside the app/merkle-api in order to properly use the .env files.
+
+The .cargo/config.toml is strictly used for vercel you can remove it for local development. If you don't want to remove it and you are using MacOs the config.toml should look like this:
+```sh
+[build]
+#target = "x86_64-unknown-linux-gnu"
+
+[target.x86_64-unknown-linux-musl]
+linker = "x86_64-unknown-linux-gnu-gcc"
+```
+If you are using a linux distribution:
+```sh
+[build]
+target = "x86_64-unknown-linux-gnu"
 ```
 
 Now you can start making changes.
@@ -48,21 +87,20 @@ Here's a list of the most frequently needed commands.
 To build the app, you can run this command:
 
 ```sh
-$ cd merkle-api
 $ cargo build
 ```
 
 To start the app on localhost, you can run this command:
 
 ```sh
-$ cd merkle-api
-$ cargo run
+$ cd apps/merkle-api
+$ cargo run --bin sablier_merkle_api
 ```
 
 To add another crate, you can run this command:
 
 ```sh
-$ cd merkle-api
+$ cd apps/merkle-api
 $ cargo add crate_name
 ```
 
