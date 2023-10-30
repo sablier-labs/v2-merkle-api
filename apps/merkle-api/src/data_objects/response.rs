@@ -70,5 +70,14 @@ pub fn to_vercel(response: R) -> Result<Vercel::Response<Vercel::Body>, Vercel::
     return Ok(Vercel::Response::builder()
         .status(response.status)
         .header("content-type", "application/json")
+        .header("Access-Control-Allow-Origin", "*")
+        .header(
+            "Access-Control-Allow-Methods",
+            "GET, POST, PATCH, PUT, DELETE, OPTIONS",
+        )
+        .header(
+            "Access-Control-Allow-Headers",
+            "Content-Type, Authorization",
+        )
         .body(response.message.to_string().into())?);
 }
