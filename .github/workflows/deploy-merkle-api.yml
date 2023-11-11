@@ -7,26 +7,23 @@ env:
   VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
 
 on:
-  # push:
-  #   branches:
-  #     - "main"
   workflow_dispatch:
 
-  # This probably requires a linux image to be created
-  # Some experiments are still required re. prebuilt deployments (https://github.com/vercel-community/rust#prebuilt-deployments)
+# This probably requires a Linux image to be created
+# Some experiments are still required re. prebuilt deployments (https://github.com/vercel-community/rust#prebuilt-deployments)
 
 jobs:
   deploy:
     runs-on: "ubuntu-latest"
     steps:
-      - name: "Setup: checkout the repo"
+      - name: "Check out the repo"
         uses: "actions/checkout@v3"
 
-      - name: Install Rust target
-        run: rustup target add x86_64-unknown-linux-gnu
+      - name: "Install Rust target for Linux"
+        run: "rustup target add x86_64-unknown-linux-gnu"
 
       - name: Install Vercel CLI
-        run: npm install -g vercel
+        run: "npm install --global vercel"
 
       - name: "Vercel: pull environment"
         run: "npx vercel pull --environment=production --token=$VERCEL_TOKEN --yes"
@@ -34,5 +31,5 @@ jobs:
       - name: "Vercel: build project artifacts for ${{env.PACKAGE_NAME}}"
         run: "npx vercel build --prod --token=$VERCEL_TOKEN"
 
-      - name: Deploy to Vercel
+      - name: "Deploy to Vercel"
         run: "vercel deploy --prod --prebuilt --token=$VERCEL_TOKEN"

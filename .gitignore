@@ -1,4 +1,7 @@
-Cargo.lock
-target
-.env
+# directories
 .vercel
+**/target
+
+# files
+Cargo.lock
+.env

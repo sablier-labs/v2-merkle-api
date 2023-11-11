@@ -1,11 +1,14 @@
-# Sablier V2 Services [![Styled with Prettier][prettier-badge]][prettier] [![Sablier][twitter-badge]][twitter]
+# Sablier V2 Services [![Discord][discord-badge]][discord] [![Twitter][twitter-badge]][twitter]
 
-[prettier]: https://prettier.io
-[prettier-badge]: https://img.shields.io/badge/Code_Style-Prettier-ff69b4.svg
+[discord]: https://discord.gg/bSwRCwWRsT
+[discord-badge]: https://dcbadge.vercel.app/api/server/bSwRCwWRsT?style=flat
 [twitter]: https://twitter.com/Sablier
 [twitter-badge]: https://img.shields.io/twitter/follow/Sablier?label=%40Sablier
 
-The official Sablier V2 backend services.
+Web services that extend the functionality of the Sablier V2 token distribution protocol.
+
+For more details about Sablier, check out our [website](https://sablier.com) and our
+[documentation](https://docs.sablier.com).
 
 ## Contributing
 
@@ -17,44 +20,55 @@ Feel free to dive in! [Open](https://github.com/sablier-labs/v2-services/issues/
 You will need the following software on your machine:
 
 - [Git](https://git-scm.com/downloads)
-- [Rust](https://www.rust-lang.org/tools/install)
+- [Rust](https://rust-lang.org/tools/install)
 - [Cargo](https://doc.rust-lang.org/cargo/commands/cargo-install.html)
 
 ### Set Up
 
-Clone this repository. In the app/merkle-api directory you will find the .env.example file that contains 3 environment variables:
+Clone this repository. In the [`apps/merkle-api`](./apps/merkle-api/) directory, you will find an `.env.example` file
+that looks like this:
 
-```sh
+```text
 PINATA_API_KEI=
 PINATA_SECRET_API_KEY=
 IPFS_GATEWAY=
 ```
 
-In order to make the API work properly you will need to create a .env file at the same level with the .env.example. After a campaign is validated and created we use Pinata to upload and in the file to IPFS. In order to obtain the PINATA_API_KEY and PINATA_SECRET_API_KEY follow this steps:
-1.  https://app.pinata.cloud/
-2.  Log In/ Sign Up
-3.  Select the API Keys tab
-4.  Select New Key
-5.  The key should have the permissions: pinFileToIPFS, pinJSONToIPFS
-6.  Set a name for the key
-7.  Click Create Key
-8.  From the popup you can take the API Key and the API Secrete and fill .env with those values
-The IPFS_GATEWAY= var can be any correct ipfs gateway but we recommend using a private one(Pinata offers this as well).
-For more details about the interactions with ipfs check apps/merkle-api/src/services/ipfs.rs
+In order to make the API work properly you will need to create a .env file at the same level with the .env.example.
+After a campaign is validated and created we use Pinata to upload and in the file to IPFS. In order to obtain the
+PINATA_API_KEY and PINATA_SECRET_API_KEY follow this steps:
 
-We are using Vercel as hosting environment and that is why we have separate bins for each endpoint. In order to run locally you can either use:
+1. Sign up or log in on https://app.pinata.cloud/
+1. Select the API Keys tab
+1. Select New Key
+1. The key should have the permissions: pinFileToIPFS, pinJSONToIPFS
+1. Set a name for the key
+1. Click Create Key
+1. From the popup, take the API Key and the API Secrete and fill them in the `.env` file. The `IPFS_GATEWAY` variable
+   can be any IPFS gateway but we recommend using a private one (Pinata offers this as well). For more details about the
+   interactions with IPFS, check [`apps/merkle-api/src/services/ipfs.rs`](./apps/merkle-api/src/services/ipfs.rs).
+
+We are using Vercel as a hosting environment, and this is why we have separate bins for each endpoint. To run locally,
+you can use this command:
+
 ```sh
 $ vercel dev
 ```
-to simulate locally what is happening in the cloud env or:
+
+Or, to simulate the cloud environment locally:
+
 ```sh
 $ cd apps/merkle-api
 $ cargo run --bin sablier_merkle_api
 ```
-that will run a classic WEB API using the src/main.rs file.
-Even tough we are using cargo work spaces the cargo run command should be run from inside the app/merkle-api in order to properly use the .env files.
 
-The .cargo/config.toml is strictly used for vercel you can remove it for local development. If you don't want to remove it and you are using MacOs the config.toml should look like this:
+This command will run a standard web API using the [`src/main.rs`](./src/main.rs) file. Even tough we are using Cargo
+workspaces, the `cargo run` command should be run from inside the [`apps/merkle-api`](./apps/merkle-api) directory in
+order to properly use the `.env` files.
+
+The `.cargo/config.toml` file is used strictly for Vercel, so you can remove it during local development. However, if
+you would prefer not to remote it and you happen to use macOS, configure your `config.toml` file like this:
+
 ```sh
 [build]
 #target = "x86_64-unknown-linux-gnu"
@@ -62,7 +76,9 @@ The .cargo/config.toml is strictly used for vercel you can remove it for local d
 [target.x86_64-unknown-linux-musl]
 linker = "x86_64-unknown-linux-gnu-gcc"
 ```
-If you are using a linux distribution:
+
+Alternatively, on Linux:
+
 ```sh
 [build]
 target = "x86_64-unknown-linux-gnu"
@@ -74,9 +90,9 @@ Now you can start making changes.
 
 You will need the following VSCode extensions:
 
-- [Rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)
-- [Prettier](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode)
-- [Rust syntax](https://marketplace.visualstudio.com/items?itemName=dustypomerleau.rust-syntax)
+- [rust-syntax](https://marketplace.visualstudio.com/items?itemName=dustypomerleau.rust-syntax)
+- [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)
+- [prettier](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode)
 
 ## Commands
 
@@ -108,22 +124,22 @@ $ cargo add crate_name
 
 Do not add trailing slashes to the API endpoints.
 
-### Health
+### Create
 
-```
-GET https://.../api/health
+```text
+POST https://.../api/create?decimals=... + FORM_DATA{file: "a csv file with addresses and amounts"}
 ```
 
 ### Eligibility
 
-```
+```text
 GET https://.../api/eligibility?address=...&cid=...
 ```
 
-### Create
+### Health
 
-```
-POST https://.../api/create?decimals=... + FORM_DATA{file: "a csv file with addresses and amounts"}
+```text
+GET https://.../api/health
 ```
 
 ### Csv Example
