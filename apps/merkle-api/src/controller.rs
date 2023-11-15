@@ -3,6 +3,7 @@ use warp::{http::Method, Filter};
 pub mod create;
 pub mod eligibility;
 pub mod health;
+pub mod validity;
 
 async fn handle_rejection(
     err: warp::Rejection,
@@ -19,10 +20,12 @@ pub fn build_routes() -> impl warp::Filter<Extract = impl warp::Reply> + Clone {
     let health = health::build_route();
     let create = create::build_route();
     let eligibility = eligibility::build_route();
+    let validity = validity::build_route();
 
     health
         .or(eligibility)
         .or(create)
+        .or(validity)
         .recover(handle_rejection)
         .with(cors)
         .with(warp::log("api"))

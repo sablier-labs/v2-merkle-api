@@ -33,6 +33,14 @@ pub struct EligibilityResponse {
 }
 
 #[derive(Serialize, Debug)]
+pub struct ValidResponse {
+    pub root: String,
+    pub total: String,
+    pub recipients: String,
+    pub cid: String,
+}
+
+#[derive(Serialize, Debug)]
 pub struct R {
     pub status: u16,
     pub message: Json,
