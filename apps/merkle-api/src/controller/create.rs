@@ -70,6 +70,7 @@ async fn handler(params: Create, buffer: &[u8]) -> response::R {
         total_amount: parsed_csv.total_amount.to_string(),
         number_of_recipients: parsed_csv.number_of_recipients,
         merkle_tree: tree_json,
+        root: tree.root(),
         recipients: parsed_csv
             .records
             .iter()

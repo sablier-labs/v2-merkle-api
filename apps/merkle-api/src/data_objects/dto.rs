@@ -10,6 +10,7 @@ pub struct RecipientDto {
 pub struct PersistentCampaignDto {
     pub total_amount: String,
     pub number_of_recipients: i32,
+    pub root: String,
     pub merkle_tree: String,
     pub recipients: Vec<RecipientDto>,
 }

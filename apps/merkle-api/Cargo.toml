@@ -15,6 +15,10 @@ path = "api/create.rs"
 name = "eligibility"
 path = "api/eligibility.rs"
 
+[[bin]]
+name = "validity"
+path = "api/validity.rs"
+
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
