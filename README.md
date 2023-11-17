@@ -125,3 +125,7 @@ GET https://.../api/eligibility?address=...&cid=...
 ```
 POST https://.../api/create?decimals=... + FORM_DATA{file: "a csv file with addresses and amounts"}
 ```
+
+### Csv Example
+
+You can find a gist of a Rust CSV Generator at: https://gist.github.com/gavriliumircea/2a9797f207a2a2f3832ddaa376337e8c
