@@ -1,7 +1,6 @@
 name: "Deploy Merkle API on Vercel"
 
 env:
-  PACKAGE_NAME: "@sablier/v2-merkle-api"
   VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
   VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
   VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
@@ -22,13 +21,13 @@ jobs:
       - name: "Install Rust target for Linux"
         run: "rustup target add x86_64-unknown-linux-gnu"
 
-      - name: Install Vercel CLI
+      - name: "Install Vercel CLI"
         run: "npm install --global vercel"
 
       - name: "Vercel: pull environment"
         run: "npx vercel pull --environment=production --token=$VERCEL_TOKEN --yes"
 
-      - name: "Vercel: build project artifacts for ${{env.PACKAGE_NAME}}"
+      - name: "Vercel: build project artifacts for v2-merkle-api"
         run: "npx vercel build --prod --token=$VERCEL_TOKEN"
 
       - name: "Deploy to Vercel"
