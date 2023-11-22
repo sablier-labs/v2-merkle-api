@@ -4,8 +4,8 @@ use serde::{Deserialize, Serialize};
 use std::{collections::HashSet, error::Error};
 
 use crate::utils::csv_validator::{
-    validate_csv_header, validate_csv_row, AddressColumnValidator, AmountColumnValidator,
-    ColumnValidator, ValidationError,
+    validate_csv_header, validate_csv_row, AddressColumnValidator, AmountColumnValidator, ColumnValidator,
+    ValidationError,
 };
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -24,10 +24,7 @@ pub struct CampaignCsvParsed {
 // TO DO: Check why this requires Send + Sync to work. Error happening in the create handler.
 
 impl CampaignCsvParsed {
-    pub fn build(
-        rdr: Reader<&[u8]>,
-        decimals: usize,
-    ) -> Result<CampaignCsvParsed, Box<dyn Error + Send + Sync>> {
+    pub fn build(rdr: Reader<&[u8]>, decimals: usize) -> Result<CampaignCsvParsed, Box<dyn Error + Send + Sync>> {
         let mut rdr = rdr;
         let mut validation_errors = Vec::new();
         let mut records: Vec<CampaignCsvRecord> = Vec::new();
@@ -36,9 +33,7 @@ impl CampaignCsvParsed {
         let pattern = format!(r"^[+]?\d*\.?\d{{0,{}}}$", decimals);
         let amount_regex = Regex::new(&pattern).unwrap();
 
-        let amount_validator = AmountColumnValidator {
-            regex: amount_regex,
-        };
+        let amount_validator = AmountColumnValidator { regex: amount_regex };
         let address_validator = AddressColumnValidator;
 
         let validators: Vec<&dyn ColumnValidator> = vec![&address_validator, &amount_validator];
@@ -49,12 +44,7 @@ impl CampaignCsvParsed {
         let header_errors = validate_csv_header(header, &validators);
         if let Some(error) = header_errors {
             validation_errors.push(error);
-            return Ok(CampaignCsvParsed {
-                total_amount,
-                number_of_recipients,
-                records,
-                validation_errors,
-            });
+            return Ok(CampaignCsvParsed { total_amount, number_of_recipients, records, validation_errors });
         }
 
         for (row_index, result) in rdr.records().enumerate() {
@@ -75,7 +65,9 @@ impl CampaignCsvParsed {
             if unique_addresses.contains(address_field) {
                 validation_errors.push(ValidationError {
                     row,
-                    message: String::from("Each recipient should have an unique address. This address was already specified in file"),
+                    message: String::from(
+                        "Each recipient should have an unique address. This address was already specified in file",
+                    ),
                 });
             }
 
@@ -85,19 +77,11 @@ impl CampaignCsvParsed {
                 total_amount += padded_amount;
                 number_of_recipients += 1;
                 unique_addresses.insert(address.clone());
-                records.push(CampaignCsvRecord {
-                    address: address,
-                    amount: padded_amount,
-                });
+                records.push(CampaignCsvRecord { address, amount: padded_amount });
             }
         }
 
-        Ok(CampaignCsvParsed {
-            total_amount,
-            number_of_recipients,
-            records,
-            validation_errors,
-        })
+        Ok(CampaignCsvParsed { total_amount, number_of_recipients, records, validation_errors })
     }
 }
 

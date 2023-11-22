@@ -1,8 +1,7 @@
 use crate::{
     csv_campaign_parser::CampaignCsvParsed,
-    data_objects::dto::RecipientDto,
     data_objects::{
-        dto::PersistentCampaignDto,
+        dto::{PersistentCampaignDto, RecipientDto},
         query_param::Create,
         response::{self, GeneralErrorResponse, UploadSuccessResponse, ValidationErrorResponse},
     },
@@ -29,10 +28,7 @@ async fn handler(params: Create, buffer: &[u8]) -> response::R {
 
     if let Err(error) = parsed_csv {
         let response_json = json!(GeneralErrorResponse {
-            message: format!(
-                "There was a problem in csv file parsing process: {}",
-                error.to_string()
-            ),
+            message: format!("There was a problem in csv file parsing process: {}", error.to_string()),
         });
 
         return response::internal_server_error(response_json);
@@ -40,10 +36,11 @@ async fn handler(params: Create, buffer: &[u8]) -> response::R {
 
     let parsed_csv = parsed_csv.unwrap();
     if parsed_csv.validation_errors.len() > 0 {
-        let response_json = json!(ValidationErrorResponse {
-            status: String::from("Invalid csv file."),
-            errors: parsed_csv.validation_errors,
-        });
+        let response_json =
+            json!(ValidationErrorResponse {
+                status: String::from("Invalid csv file."),
+                errors: parsed_csv.validation_errors,
+            });
 
         return response::bad_request(response_json);
     }
@@ -55,14 +52,7 @@ async fn handler(params: Create, buffer: &[u8]) -> response::R {
         .map(|(i, r)| vec![i.to_string(), r.address.clone(), r.amount.to_string()])
         .collect();
 
-    let tree = StandardMerkleTree::of(
-        leaves,
-        &[
-            "uint".to_string(),
-            "address".to_string(),
-            "uint256".to_string(),
-        ],
-    );
+    let tree = StandardMerkleTree::of(leaves, &["uint".to_string(), "address".to_string(), "uint256".to_string()]);
 
     let tree_json = serde_json::to_string(&tree.dump()).unwrap();
 
@@ -74,17 +64,13 @@ async fn handler(params: Create, buffer: &[u8]) -> response::R {
         recipients: parsed_csv
             .records
             .iter()
-            .map(|x| RecipientDto {
-                address: x.address.clone(),
-                amount: x.amount.to_string(),
-            })
+            .map(|x| RecipientDto { address: x.address.clone(), amount: x.amount.to_string() })
             .collect(),
     })
     .await;
     if let Err(_) = ipfs_response {
-        let response_json = json!(GeneralErrorResponse {
-            message: String::from("There was an error uploading the campaign to ipfs"),
-        });
+        let response_json =
+            json!(GeneralErrorResponse { message: String::from("There was an error uploading the campaign to ipfs") });
 
         return response::internal_server_error(response_json);
     }
@@ -93,9 +79,8 @@ async fn handler(params: Create, buffer: &[u8]) -> response::R {
     let deserialized_response = try_deserialize_pinata_response(&ipfs_response);
 
     if let Err(_) = deserialized_response {
-        let response_json = json!(GeneralErrorResponse {
-            message: String::from("There was an error uploading the campaign to ipfs"),
-        });
+        let response_json =
+            json!(GeneralErrorResponse { message: String::from("There was an error uploading the campaign to ipfs") });
 
         return response::internal_server_error(response_json);
     }
@@ -131,15 +116,13 @@ pub async fn handler_to_warp(params: Create, form: FormData) -> WebResult<impl w
         }
     }
 
-    let response_json = json!(GeneralErrorResponse {
-        message: "The request form data did not contain recipients csv file".to_string(),
-    });
+    let response_json = json!(
+        GeneralErrorResponse { message: "The request form data did not contain recipients csv file".to_string() }
+    );
     return Ok(response::to_warp(response::bad_request(response_json)));
 }
 
-pub async fn handler_to_vercel(
-    req: Vercel::Request,
-) -> Result<Vercel::Response<Vercel::Body>, Vercel::Error> {
+pub async fn handler_to_vercel(req: Vercel::Request) -> Result<Vercel::Response<Vercel::Body>, Vercel::Error> {
     // ------------------------------------------------------------
     // Extract query parameters from the URL: decimals
     // ------------------------------------------------------------
@@ -150,9 +133,7 @@ pub async fn handler_to_vercel(
 
     if let None = decimals {
         let response_json = json!(GeneralErrorResponse {
-            message: String::from(
-                "Decimals query parameter is mandatory in order to create a valid campaign!"
-            ),
+            message: String::from("Decimals query parameter is mandatory in order to create a valid campaign!"),
         });
 
         return response::to_vercel(response::ok(response_json));
@@ -169,9 +150,7 @@ pub async fn handler_to_vercel(
         .and_then(|v| v.strip_prefix("multipart/form-data; boundary="));
 
     if let None = boundary {
-        let response_json = json!(GeneralErrorResponse {
-            message: String::from("Invalid content type header"),
-        });
+        let response_json = json!(GeneralErrorResponse { message: String::from("Invalid content type header") });
 
         return response::to_vercel(response::ok(response_json));
     }
@@ -182,9 +161,7 @@ pub async fn handler_to_vercel(
     let mut data = multipart::server::Multipart::with_body(body.as_slice(), boundary);
     let file = data.read_entry();
     if let Err(error) = file {
-        let response_json = json!(GeneralErrorResponse {
-            message: String::from(error.to_string()),
-        });
+        let response_json = json!(GeneralErrorResponse { message: String::from(error.to_string()) });
 
         return response::to_vercel(response::ok(response_json));
     }
@@ -192,9 +169,7 @@ pub async fn handler_to_vercel(
     let file = file.unwrap();
 
     if let None = file {
-        let response_json = json!(GeneralErrorResponse {
-            message: String::from("Invalid form data, missing file"),
-        });
+        let response_json = json!(GeneralErrorResponse { message: String::from("Invalid form data, missing file") });
 
         return response::to_vercel(response::ok(response_json));
     }
@@ -203,9 +178,8 @@ pub async fn handler_to_vercel(
     let mut buffer: Vec<u8> = vec![];
 
     if let Err(error) = file.data.read_to_end(&mut buffer) {
-        let response_json = json!(GeneralErrorResponse {
-            message: format!("Could not read body data {}", error.to_string()),
-        });
+        let response_json =
+            json!(GeneralErrorResponse { message: format!("Could not read body data {}", error.to_string()) });
 
         return response::to_vercel(response::ok(response_json));
     }
@@ -215,16 +189,13 @@ pub async fn handler_to_vercel(
     // ------------------------------------------------------------
 
     let decimals: u16 = decimals.unwrap().parse().unwrap_or_default();
-    let create = Create {
-        decimals: decimals.into(),
-    };
+    let create = Create { decimals: decimals.into() };
 
     let result = handler(create, &buffer).await;
     return response::to_vercel(result);
 }
 
-pub fn build_route(
-) -> impl warp::Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
+pub fn build_route() -> impl warp::Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
     warp::path!("api" / "create")
         .and(warp::post())
         .and(warp::query::query::<Create>())

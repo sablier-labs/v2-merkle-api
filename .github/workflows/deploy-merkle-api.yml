@@ -1,4 +1,4 @@
-name: "Merkle API Deployment on Vercel"
+name: "Deploy Merkle API on Vercel"
 
 env:
   PACKAGE_NAME: "@sablier/v2-merkle-api"

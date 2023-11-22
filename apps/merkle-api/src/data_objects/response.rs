@@ -47,24 +47,15 @@ pub struct R {
 }
 
 pub fn bad_request(json_response: Json) -> R {
-    R {
-        status: warp::http::StatusCode::BAD_REQUEST.as_u16(),
-        message: json_response,
-    }
+    R { status: warp::http::StatusCode::BAD_REQUEST.as_u16(), message: json_response }
 }
 
 pub fn ok(json_response: Json) -> R {
-    R {
-        status: warp::http::StatusCode::OK.as_u16(),
-        message: json_response,
-    }
+    R { status: warp::http::StatusCode::OK.as_u16(), message: json_response }
 }
 
 pub fn internal_server_error(json_response: Json) -> R {
-    R {
-        status: warp::http::StatusCode::INTERNAL_SERVER_ERROR.as_u16(),
-        message: json_response,
-    }
+    R { status: warp::http::StatusCode::INTERNAL_SERVER_ERROR.as_u16(), message: json_response }
 }
 
 pub fn to_warp(response: R) -> WithStatus<warp::reply::Json> {
@@ -79,13 +70,7 @@ pub fn to_vercel(response: R) -> Result<Vercel::Response<Vercel::Body>, Vercel::
         .status(response.status)
         .header("content-type", "application/json")
         .header("Access-Control-Allow-Origin", "*")
-        .header(
-            "Access-Control-Allow-Methods",
-            "GET, POST, PATCH, PUT, DELETE, OPTIONS",
-        )
-        .header(
-            "Access-Control-Allow-Headers",
-            "Content-Type, Authorization",
-        )
+        .header("Access-Control-Allow-Methods", "GET, POST, PATCH, PUT, DELETE, OPTIONS")
+        .header("Access-Control-Allow-Headers", "Content-Type, Authorization")
         .body(response.message.to_string().into())?);
 }

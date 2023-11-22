@@ -19,18 +19,15 @@ pub struct PinataSuccess {
     pub timestamp: String,
 }
 
-pub fn try_deserialize_pinata_response(
-    response_body: &str,
-) -> Result<PinataSuccess, serde_json::Error> {
+pub fn try_deserialize_pinata_response(response_body: &str) -> Result<PinataSuccess, serde_json::Error> {
     let success = serde_json::from_str::<PinataSuccess>(response_body)?;
     return Ok(success);
 }
 
 pub async fn upload_to_ipfs(data: PersistentCampaignDto) -> Result<String, reqwest::Error> {
     dotenv().ok();
-    let pinata_api_key = std::env::var("PINATA_API_KEI").expect("PINATA_API_KEI must be set");
-    let pinata_secret_api_key =
-        std::env::var("PINATA_SECRET_API_KEY").expect("PINATA_SECRET_API_KEY must be set");
+    let pinata_api_key = std::env::var("PINATA_API_KEY").expect("PINATA_API_KEY must be set");
+    let pinata_secret_api_key = std::env::var("PINATA_SECRET_API_KEY").expect("PINATA_SECRET_API_KEY must be set");
 
     let client = reqwest::Client::new();
 
@@ -38,9 +35,7 @@ pub async fn upload_to_ipfs(data: PersistentCampaignDto) -> Result<String, reqwe
 
     let serialized_data = json!(&data);
     let bytes = serde_json::to_vec(&serialized_data).unwrap();
-    let part = Part::bytes(bytes)
-        .file_name("data.json")
-        .mime_str("application/json")?;
+    let part = Part::bytes(bytes).file_name("data.json").mime_str("application/json")?;
 
     let form = Form::new().part("file", part);
 
@@ -56,9 +51,7 @@ pub async fn upload_to_ipfs(data: PersistentCampaignDto) -> Result<String, reqwe
     Ok(text_response)
 }
 
-pub async fn download_from_ipfs<T: DeserializeOwned>(
-    cid: &str,
-) -> Result<T, reqwest::Error> {
+pub async fn download_from_ipfs<T: DeserializeOwned>(cid: &str) -> Result<T, reqwest::Error> {
     dotenv().ok();
     let ipfs_gateway = std::env::var("IPFS_GATEWAY").expect("IPFS_GATEWAY must be set");
     let ipfs_url = format!("{}{}", ipfs_gateway, cid);

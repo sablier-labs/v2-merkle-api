@@ -23,10 +23,7 @@ impl ColumnValidator for AddressColumnValidator {
     fn validate_cel(&self, cel: &str, row_index: usize) -> Option<ValidationError> {
         let is_valid = is_valid_eth_address(cel);
         if !is_valid {
-            return Some(ValidationError {
-                row: row_index + 2,
-                message: String::from("Invalid Ethereum address"),
-            });
+            return Some(ValidationError { row: row_index + 2, message: String::from("Invalid Ethereum address") });
         }
         return None;
     }
@@ -35,9 +32,7 @@ impl ColumnValidator for AddressColumnValidator {
         if cel.to_lowercase() != "address" {
             return Some(ValidationError {
                 row: 1, // Header is in the first row
-                message: String::from(
-                    "CSV header invalid. The csv header should be address,amount",
-                ),
+                message: String::from("CSV header invalid. The csv header should be address,amount"),
             });
         }
         return None;
@@ -61,10 +56,7 @@ impl ColumnValidator for AmountColumnValidator {
         let amount: f64 = cel.parse().unwrap();
 
         if amount == 0.0 {
-            return Some(ValidationError {
-                row: row_index + 2,
-                message: String::from("The amount cannot be 0"),
-            });
+            return Some(ValidationError { row: row_index + 2, message: String::from("The amount cannot be 0") });
         }
         return None;
     }
@@ -73,9 +65,7 @@ impl ColumnValidator for AmountColumnValidator {
         if cel.to_lowercase() != "amount" {
             return Some(ValidationError {
                 row: 1, // Header is in the first row
-                message: String::from(
-                    "CSV header invalid. The csv header should be address,amount",
-                ),
+                message: String::from("CSV header invalid. The csv header should be address,amount"),
             });
         }
         return None;
@@ -105,10 +95,7 @@ pub fn validate_csv_row(
     errors
 }
 
-pub fn validate_csv_header(
-    header: &StringRecord,
-    validators: &[&dyn ColumnValidator],
-) -> Option<ValidationError> {
+pub fn validate_csv_header(header: &StringRecord, validators: &[&dyn ColumnValidator]) -> Option<ValidationError> {
     for (index, validator) in validators.iter().enumerate() {
         let head = header[index].trim();
         let header_error = validator.validate_header(head);
