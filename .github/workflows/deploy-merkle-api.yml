@@ -8,9 +8,6 @@ env:
 on:
   workflow_dispatch:
 
-# This probably requires a Linux image to be created
-# Some experiments are still required re. prebuilt deployments (https://github.com/vercel-community/rust#prebuilt-deployments)
-
 jobs:
   deploy:
     runs-on: "ubuntu-latest"
@@ -21,9 +18,6 @@ jobs:
       - name: "Install Rust target for Linux"
         run: "rustup target add x86_64-unknown-linux-gnu"
 
-      - name: "Install Vercel CLI"
-        run: "npm install --global vercel"
-
       - name: "Vercel: pull environment"
         run: "npx vercel pull --environment=production --token=$VERCEL_TOKEN --yes"
 
@@ -31,4 +25,4 @@ jobs:
         run: "npx vercel build --prod --token=$VERCEL_TOKEN"
 
       - name: "Deploy to Vercel"
-        run: "vercel deploy --prod --prebuilt --token=$VERCEL_TOKEN"
+        run: "npx vercel deploy --prod --prebuilt --token=$VERCEL_TOKEN"
