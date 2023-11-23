@@ -1,5 +1,4 @@
-use crate::data_objects::response;
-use crate::WebResult;
+use crate::{data_objects::response, WebResult};
 use serde_json::json;
 use std::str;
 
@@ -28,9 +27,6 @@ pub async fn handler_to_vercel() -> Result<Vercel::Response<Vercel::Body>, Verce
     return response::to_vercel(result);
 }
 
-pub fn build_route(
-) -> impl warp::Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
-    warp::path!("api" / "health")
-        .and(warp::get())
-        .and_then(handler_to_warp)
+pub fn build_route() -> impl warp::Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
+    warp::path!("api" / "health").and(warp::get()).and_then(handler_to_warp)
 }

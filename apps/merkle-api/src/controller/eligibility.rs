@@ -10,8 +10,7 @@ use crate::{
 use merkle_tree_rs::standard::{LeafType, StandardMerkleTree, StandardMerkleTreeData};
 
 use serde_json::json;
-use std::collections::HashMap;
-use std::str;
+use std::{collections::HashMap, str};
 use url::Url;
 
 use vercel_runtime as Vercel;
@@ -20,22 +19,22 @@ use warp::Filter;
 pub async fn handler(eligibility: Eligibility) -> response::R {
     let ipfs_data = download_from_ipfs::<PersistentCampaignDto>(&eligibility.cid).await;
     if let Err(_) = ipfs_data {
-        let response_json = json!(GeneralErrorResponse {
-            message: format!("There was a problem processing your request: Bad CID provided"),
-        });
+        let response_json =
+            json!(GeneralErrorResponse {
+                message: format!("There was a problem processing your request: Bad CID provided"),
+            });
 
         return response::internal_server_error(response_json);
     }
     let ipfs_data = ipfs_data.unwrap();
-    let recipient_index = ipfs_data
-        .recipients
-        .iter()
-        .position(|r| r.address.to_lowercase() == eligibility.address.to_lowercase());
+    let recipient_index =
+        ipfs_data.recipients.iter().position(|r| r.address.to_lowercase() == eligibility.address.to_lowercase());
 
     if let None = recipient_index {
-        let response_json = json!(GeneralErrorResponse {
-            message: String::from("The provided address is not eligible for this campaign"),
-        });
+        let response_json =
+            json!(GeneralErrorResponse {
+                message: String::from("The provided address is not eligible for this campaign"),
+            });
 
         return response::bad_request(response_json);
     }
@@ -62,9 +61,7 @@ pub async fn handler_to_warp(eligibility: Eligibility) -> WebResult<impl warp::R
     return Ok(response::to_warp(result));
 }
 
-pub async fn handler_to_vercel(
-    req: Vercel::Request,
-) -> Result<Vercel::Response<Vercel::Body>, Vercel::Error> {
+pub async fn handler_to_vercel(req: Vercel::Request) -> Result<Vercel::Response<Vercel::Body>, Vercel::Error> {
     // ------------------------------------------------------------
     // Extract query parameters from the URL: address, cid
     // ------------------------------------------------------------
@@ -87,8 +84,7 @@ pub async fn handler_to_vercel(
     return response::to_vercel(result);
 }
 
-pub fn build_route(
-) -> impl warp::Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
+pub fn build_route() -> impl warp::Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
     warp::path!("api" / "eligibility")
         .and(warp::get())
         .and(warp::query::query::<Eligibility>())

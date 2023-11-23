@@ -1,5 +1,3 @@
 [workspace]
-resolver = "2"
-members = ["apps/merkle-api"]
-
-exclude = []
+    resolver = "2"
+    members = ["apps/*"]

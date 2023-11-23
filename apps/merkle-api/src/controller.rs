@@ -5,9 +5,7 @@ pub mod eligibility;
 pub mod health;
 pub mod validity;
 
-async fn handle_rejection(
-    err: warp::Rejection,
-) -> Result<impl warp::Reply, std::convert::Infallible> {
+async fn handle_rejection(err: warp::Rejection) -> Result<impl warp::Reply, std::convert::Infallible> {
     Ok(warp::reply::json(&format!("{:?}", err)))
 }
 
@@ -22,11 +20,5 @@ pub fn build_routes() -> impl warp::Filter<Extract = impl warp::Reply> + Clone {
     let eligibility = eligibility::build_route();
     let validity = validity::build_route();
 
-    health
-        .or(eligibility)
-        .or(create)
-        .or(validity)
-        .recover(handle_rejection)
-        .with(cors)
-        .with(warp::log("api"))
+    health.or(eligibility).or(create).or(validity).recover(handle_rejection).with(cors).with(warp::log("api"))
 }
