@@ -20,6 +20,12 @@ jobs:
         with:
           targets: "x86_64-unknown-linux-musl"
 
+      - name: "Install musl-tools to provide musl-gcc"
+        uses: awalsh128/cache-apt-pkgs-action@v1
+        with:
+          packages: "musl-tools"
+          version: "1.0"
+
       # See https://github.com/vercel-community/rust/issues/134
       - name: "Add Cargo config file"
         run: |
