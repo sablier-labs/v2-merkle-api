@@ -15,18 +15,12 @@ jobs:
       - name: "Check out the repo"
         uses: "actions/checkout@v3"
 
-      - name: "Install Rust target for Linux"
-        run: "rustup target add x86_64-unknown-linux-musl"
-
-      # We need musl-gcc
-      # See https://github.com/actions-rs/toolchain/issues/102#issuecomment-1132620977
-      - name: "Install musl-tools to provide musl-gcc"
-        uses: awalsh128/cache-apt-pkgs-action@v1
+      - name: "Install Rust with the musl target"
+        uses: "moonrepo/setup-rust@v1"
         with:
-          packages: musl-tools
-          version: 1.0
+          targets: "x86_64-unknown-linux-musl"
 
-      # See https://github.com/vercel-community/rust#prebuilt-deployments
+      # See https://github.com/vercel-community/rust/issues/134
       - name: "Add Cargo config file"
         run: |
           mkdir -p .cargo
