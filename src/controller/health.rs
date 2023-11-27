@@ -13,18 +13,18 @@ pub async fn handler() -> response::R {
         "message": MESSAGE.to_string(),
     });
 
-    return response::ok(result);
+    response::ok(result)
 }
 
 pub async fn handler_to_warp() -> WebResult<impl warp::Reply> {
     let result = handler().await;
-    return Ok(response::to_warp(result));
+    Ok(response::to_warp(result))
 }
 
 pub async fn handler_to_vercel() -> Result<Vercel::Response<Vercel::Body>, Vercel::Error> {
     let result = handler().await;
 
-    return response::to_vercel(result);
+    response::to_vercel(result)
 }
 
 pub fn build_route() -> impl warp::Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {

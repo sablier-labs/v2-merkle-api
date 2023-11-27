@@ -7,5 +7,5 @@ async fn main() -> Result<(), Vercel::Error> {
 }
 
 pub async fn handler(req: Vercel::Request) -> Result<Vercel::Response<Vercel::Body>, Vercel::Error> {
-    return eligibility::handler_to_vercel(req).await;
+    eligibility::handler_to_vercel(req).await
 }
