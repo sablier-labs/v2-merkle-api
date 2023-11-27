@@ -1,16 +1,12 @@
 name: "Deploy Merkle API on Vercel"
 
 env:
-  PACKAGE_NAME: "@sablier/v2-merkle-api"
   VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
   VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
   VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
 
 on:
   workflow_dispatch:
-
-# This probably requires a Linux image to be created
-# Some experiments are still required re. prebuilt deployments (https://github.com/vercel-community/rust#prebuilt-deployments)
 
 jobs:
   deploy:
@@ -19,17 +15,29 @@ jobs:
       - name: "Check out the repo"
         uses: "actions/checkout@v3"
 
-      - name: "Install Rust target for Linux"
-        run: "rustup target add x86_64-unknown-linux-gnu"
+      - name: "Install Rust with the musl target"
+        uses: "moonrepo/setup-rust@v1"
+        with:
+          targets: "x86_64-unknown-linux-musl"
 
-      - name: Install Vercel CLI
-        run: "npm install --global vercel"
+      - name: "Install musl-tools to provide musl-gcc"
+        uses: awalsh128/cache-apt-pkgs-action@v1
+        with:
+          packages: "musl-tools"
+          version: "1.0"
+
+      # See https://github.com/vercel-community/rust/issues/134
+      - name: "Add Cargo config file"
+        run: |
+          mkdir -p .cargo
+          echo '[build]' > .cargo/config.toml
+          echo 'target = "x86_64-unknown-linux-musl"' >> .cargo/config.toml
 
       - name: "Vercel: pull environment"
         run: "npx vercel pull --environment=production --token=$VERCEL_TOKEN --yes"
 
-      - name: "Vercel: build project artifacts for ${{env.PACKAGE_NAME}}"
+      - name: "Vercel: build project artifacts for v2-merkle-api"
         run: "npx vercel build --prod --token=$VERCEL_TOKEN"
 
       - name: "Deploy to Vercel"
-        run: "vercel deploy --prod --prebuilt --token=$VERCEL_TOKEN"
+        run: "npx vercel deploy --prod --prebuilt --token=$VERCEL_TOKEN"
