@@ -33,61 +33,43 @@ After a campaign is created via the API, we use Pinata to upload and pin the fil
    be any IPFS gateway but we recommend using a private one (Pinata offers this as well). For more details about the
    interactions with IPFS, check [`src/services/ipfs.rs`](./src/services/ipfs.rs).
 
-We use Vercel for hosting, and this is why we have separate binaries for each endpoint. To run locally, use this
+We use Vercel for hosting, and this is why we have separate binaries for each endpoint. For local development, use this
 command:
 
 ```sh
 $ vercel dev
 ```
 
-Or, to simulate the cloud environment locally:
+Or, to simulate the cloud environment:
 
 ```sh
 $ cargo run --bin sablier_merkle_api
 ```
 
-This command will run a standard web API and expose it on port 8000 on localhost.
-
-### Local Development
-
-The `.cargo/config.toml` file is used strictly for Vercel, so you can remove it during local development. However, if
-you would prefer not to remove it and you happen to use macOS, configure your `config.toml` file like this:
-
-```toml
-[build]
-   #target = "x86_64-unknown-linux-gnu"
-
-[target.x86_64-unknown-linux-musl]
-   linker = "x86_64-unknown-linux-gnu-gcc"
-```
-
-Alternatively, on Linux:
-
-```sh
-[build]
-   target = "x86_64-unknown-linux-gnu"
-```
+Either of these commands will run a standard web API and expose it on port 3000 on localhost.
 
 ## API
+
+The endpoints below assume that you are running the API locally.
 
 Do not add trailing slashes to the API endpoints.
 
 ### Create
 
 ```text
-POST http://localhost:8000/api/create?decimals=... + FORM_DATA{file: "a csv file with addresses and amounts"}
+POST http://localhost:3000/api/create?decimals=... + FORM_DATA{file: "a csv file with addresses and amounts"}
 ```
 
 ### Eligibility
 
 ```text
-GET http://localhost:8000/api/eligibility?address=...&cid=...
+GET http://localhost:3000/api/eligibility?address=...&cid=...
 ```
 
 ### Health
 
 ```text
-GET http://localhost:8000/api/health
+GET http://localhost:3000/api/health
 ```
 
 ## Commands
@@ -137,4 +119,4 @@ You will need the following VSCode extensions:
 
 ## License
 
-Sablier V2 Services is licensed under [GPL v3 or later](./LICENSE.md).
+Sablier V2 Merkle API is licensed under [GPL v3 or later](./LICENSE.md).
