@@ -9,8 +9,7 @@ use crate::{
 };
 
 use serde_json::json;
-use std::collections::HashMap;
-use std::str;
+use std::{collections::HashMap, str};
 use url::Url;
 
 use vercel_runtime as Vercel;
@@ -18,10 +17,9 @@ use warp::Filter;
 
 pub async fn handler(validity: Validity) -> response::R {
     let ipfs_data = download_from_ipfs::<PersistentCampaignDto>(&validity.cid).await;
-    if let Err(_) = ipfs_data {
-        let response_json = json!(GeneralErrorResponse {
-            message: format!("Bad CID or invalid file format provided."),
-        });
+    if ipfs_data.is_err() {
+        let response_json =
+            json!(GeneralErrorResponse { message: "Bad CID or invalid file format provided.".to_string() });
 
         return response::internal_server_error(response_json);
     }
@@ -33,17 +31,15 @@ pub async fn handler(validity: Validity) -> response::R {
         recipients: ipfs_data.number_of_recipients.to_string(),
         cid: validity.cid
     });
-    return response::ok(response_json);
+    response::ok(response_json)
 }
 
 pub async fn handler_to_warp(validity: Validity) -> WebResult<impl warp::Reply> {
     let result = handler(validity).await;
-    return Ok(response::to_warp(result));
+    Ok(response::to_warp(result))
 }
 
-pub async fn handler_to_vercel(
-    req: Vercel::Request,
-) -> Result<Vercel::Response<Vercel::Body>, Vercel::Error> {
+pub async fn handler_to_vercel(req: Vercel::Request) -> Result<Vercel::Response<Vercel::Body>, Vercel::Error> {
     // ------------------------------------------------------------
     // Extract query parameters from the URL: address, cid
     // ------------------------------------------------------------
@@ -56,19 +52,13 @@ pub async fn handler_to_vercel(
     // ------------------------------------------------------------
 
     let fallback = String::from("");
-    let params = Validity {
-        cid: query.get("cid").unwrap_or_else(|| &fallback).clone(),
-    };
+    let params = Validity { cid: query.get("cid").unwrap_or(&fallback).clone() };
 
     let result = handler(params).await;
 
-    return response::to_vercel(result);
+    response::to_vercel(result)
 }
 
-pub fn build_route(
-) -> impl warp::Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
-    warp::path!("api" / "validity")
-        .and(warp::get())
-        .and(warp::query::query::<Validity>())
-        .and_then(handler_to_warp)
+pub fn build_route() -> impl warp::Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
+    warp::path!("api" / "validity").and(warp::get()).and(warp::query::query::<Validity>()).and_then(handler_to_warp)
 }

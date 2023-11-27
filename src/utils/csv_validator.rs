@@ -25,7 +25,7 @@ impl ColumnValidator for AddressColumnValidator {
         if !is_valid {
             return Some(ValidationError { row: row_index + 2, message: String::from("Invalid Ethereum address") });
         }
-        return None;
+        None
     }
 
     fn validate_header(&self, cel: &str) -> Option<ValidationError> {
@@ -35,7 +35,7 @@ impl ColumnValidator for AddressColumnValidator {
                 message: String::from("CSV header invalid. The csv header should be address,amount"),
             });
         }
-        return None;
+        None
     }
 }
 
@@ -58,7 +58,7 @@ impl ColumnValidator for AmountColumnValidator {
         if amount == 0.0 {
             return Some(ValidationError { row: row_index + 2, message: String::from("The amount cannot be 0") });
         }
-        return None;
+        None
     }
 
     fn validate_header(&self, cel: &str) -> Option<ValidationError> {
@@ -68,7 +68,7 @@ impl ColumnValidator for AmountColumnValidator {
                 message: String::from("CSV header invalid. The csv header should be address,amount"),
             });
         }
-        return None;
+        None
     }
 }
 

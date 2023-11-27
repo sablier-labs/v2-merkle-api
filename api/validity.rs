@@ -6,8 +6,6 @@ async fn main() -> Result<(), Vercel::Error> {
     Vercel::run(handler).await
 }
 
-pub async fn handler(
-    req: Vercel::Request,
-) -> Result<Vercel::Response<Vercel::Body>, Vercel::Error> {
-    return validity::handler_to_vercel(req).await;
+pub async fn handler(req: Vercel::Request) -> Result<Vercel::Response<Vercel::Body>, Vercel::Error> {
+    validity::handler_to_vercel(req).await
 }

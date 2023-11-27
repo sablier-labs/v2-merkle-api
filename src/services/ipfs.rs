@@ -21,7 +21,7 @@ pub struct PinataSuccess {
 
 pub fn try_deserialize_pinata_response(response_body: &str) -> Result<PinataSuccess, serde_json::Error> {
     let success = serde_json::from_str::<PinataSuccess>(response_body)?;
-    return Ok(success);
+    Ok(success)
 }
 
 pub async fn upload_to_ipfs(data: PersistentCampaignDto) -> Result<String, reqwest::Error> {

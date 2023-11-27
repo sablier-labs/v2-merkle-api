@@ -18,11 +18,10 @@ use warp::Filter;
 
 pub async fn handler(eligibility: Eligibility) -> response::R {
     let ipfs_data = download_from_ipfs::<PersistentCampaignDto>(&eligibility.cid).await;
-    if let Err(_) = ipfs_data {
-        let response_json =
-            json!(GeneralErrorResponse {
-                message: format!("There was a problem processing your request: Bad CID provided"),
-            });
+    if ipfs_data.is_err() {
+        let response_json = json!(GeneralErrorResponse {
+            message: "There was a problem processing your request: Bad CID provided".to_string(),
+        });
 
         return response::internal_server_error(response_json);
     }
@@ -30,11 +29,10 @@ pub async fn handler(eligibility: Eligibility) -> response::R {
     let recipient_index =
         ipfs_data.recipients.iter().position(|r| r.address.to_lowercase() == eligibility.address.to_lowercase());
 
-    if let None = recipient_index {
-        let response_json =
-            json!(GeneralErrorResponse {
-                message: String::from("The provided address is not eligible for this campaign"),
-            });
+    if recipient_index.is_none() {
+        let response_json = json!(GeneralErrorResponse {
+            message: String::from("The provided address is not eligible for this campaign"),
+        });
 
         return response::bad_request(response_json);
     }
@@ -53,12 +51,12 @@ pub async fn handler(eligibility: Eligibility) -> response::R {
         address: ipfs_data.recipients[recipient_index].address.clone(),
         amount: ipfs_data.recipients[recipient_index].amount.clone(),
     });
-    return response::ok(response_json);
+    response::ok(response_json)
 }
 
 pub async fn handler_to_warp(eligibility: Eligibility) -> WebResult<impl warp::Reply> {
     let result = handler(eligibility).await;
-    return Ok(response::to_warp(result));
+    Ok(response::to_warp(result))
 }
 
 pub async fn handler_to_vercel(req: Vercel::Request) -> Result<Vercel::Response<Vercel::Body>, Vercel::Error> {
@@ -75,13 +73,13 @@ pub async fn handler_to_vercel(req: Vercel::Request) -> Result<Vercel::Response<
 
     let fallback = String::from("");
     let params = Eligibility {
-        address: query.get("address").unwrap_or_else(|| &fallback).clone(),
-        cid: query.get("cid").unwrap_or_else(|| &fallback).clone(),
+        address: query.get("address").unwrap_or(&fallback).clone(),
+        cid: query.get("cid").unwrap_or(&fallback).clone(),
     };
 
     let result = handler(params).await;
 
-    return response::to_vercel(result);
+    response::to_vercel(result)
 }
 
 pub fn build_route() -> impl warp::Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {

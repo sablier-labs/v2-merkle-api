@@ -58,7 +58,7 @@ impl CampaignCsvParsed {
             let amount_field = record[1].trim();
             let row = row_index + 2;
             let row_errors = validate_csv_row(&record, row_index, &validators);
-            if row_errors.len() > 0 {
+            if !row_errors.is_empty() {
                 validation_errors.extend(row_errors);
             }
 
@@ -71,7 +71,7 @@ impl CampaignCsvParsed {
                 });
             }
 
-            if validation_errors.len() == 0 {
+            if validation_errors.is_empty() {
                 let address = address_field.to_string().to_lowercase();
                 let padded_amount = pad_value(amount_field, decimals);
                 total_amount += padded_amount;
@@ -86,7 +86,7 @@ impl CampaignCsvParsed {
 }
 
 fn pad_value(s: &str, no_decimals: usize) -> u128 {
-    let decimal_point = s.find('.').unwrap_or_else(|| s.len());
+    let decimal_point = s.find('.').unwrap_or(s.len());
     if decimal_point == s.len() {
         return format!("{}{}", s, "0".repeat(no_decimals)).parse().unwrap();
     }
