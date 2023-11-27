@@ -18,10 +18,11 @@ In order to make the API work properly, you will need to create a `.env` file by
 PINATA_API_KEY=
 PINATA_SECRET_API_KEY=
 IPFS_GATEWAY=
+PINATA_ACCESS_TOKEN=
 ```
 
 After a campaign is created via the API, we use Pinata to upload and pin the file to IPFS. In order to obtain the
-`PINATA_API_KEY` and `PINATA_SECRET_API_KEY`, follow this steps:
+`PINATA_API_KEY`, `PINATA_SECRET_API_KEY` and `PINATA_ACCESS_TOKEN`, follow this steps:
 
 1. Sign up or log in on https://app.pinata.cloud/
 1. Select the API Keys tab
@@ -32,6 +33,9 @@ After a campaign is created via the API, we use Pinata to upload and pin the fil
 1. From the popup, take the API Key and the API Secret and put them in the `.env` file. The `IPFS_GATEWAY` variable can
    be any IPFS gateway but we recommend using a private one (Pinata offers this as well). For more details about the
    interactions with IPFS, check [`src/services/ipfs.rs`](./src/services/ipfs.rs).
+1. Select the Access Controls tab
+1. Click Request Token
+1. Copy the toke and put in th `.env` file int the `PINATA_ACCESS_TOKEN` variable
 
 We use Vercel for hosting, and this is why we have separate binaries for each endpoint. For local development, use this
 command:
@@ -59,6 +63,9 @@ Do not add trailing slashes to the API endpoints.
 ```text
 POST http://localhost:3000/api/create?decimals=... + FORM_DATA{file: "a csv file with addresses and amounts"}
 ```
+
+You can find a csv template here: `https://files.sablier.com/templates/campaignTemplate.csv`. Please use valid addresses
+and positive amounts. The amount paddings will be performed based on the decimals query param.
 
 ### Eligibility
 

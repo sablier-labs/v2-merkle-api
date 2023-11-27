@@ -11,7 +11,7 @@ use crate::{
 
 use csv::ReaderBuilder;
 use merkle_tree_rs::standard::StandardMerkleTree;
-use std::{collections::HashMap, io::Read, str};
+use std::{collections::HashMap, io::Read, num::ParseIntError, str};
 use url::Url;
 
 use serde_json::json;
@@ -22,9 +22,9 @@ use warp::{Buf, Filter};
 struct CustomError(String);
 impl warp::reject::Reject for CustomError {}
 
-async fn handler(params: Create, buffer: &[u8]) -> response::R {
+async fn handler(decimals: usize, buffer: &[u8]) -> response::R {
     let rdr = ReaderBuilder::new().from_reader(buffer);
-    let parsed_csv = CampaignCsvParsed::build(rdr, params.decimals);
+    let parsed_csv = CampaignCsvParsed::build(rdr, decimals);
 
     if let Err(error) = parsed_csv {
         let response_json = json!(GeneralErrorResponse {
@@ -98,6 +98,15 @@ async fn handler(params: Create, buffer: &[u8]) -> response::R {
 }
 
 pub async fn handler_to_warp(params: Create, form: FormData) -> WebResult<impl warp::Reply> {
+    let decimals: Result<u16, ParseIntError> = params.decimals.parse();
+    if decimals.is_err() {
+        let response_json = json!(GeneralErrorResponse {
+            message: String::from("Decimals query parameter is mandatory and should be a valid integer in order to create a valid campaign!"),
+        });
+
+        return Ok(response::to_warp(response::bad_request(response_json)));
+    }
+    let decimals = decimals.unwrap_or_default();
     let mut form = form;
     while let Some(Ok(part)) = form.next().await {
         let name = part.name();
@@ -110,7 +119,7 @@ pub async fn handler_to_warp(params: Create, form: FormData) -> WebResult<impl w
                 chunk.reader().read_to_end(&mut buffer).unwrap();
             }
 
-            let result = handler(params, &buffer).await;
+            let result = handler(decimals.into(), &buffer).await;
             return Ok(response::to_warp(result));
         }
     }
@@ -186,10 +195,17 @@ pub async fn handler_to_vercel(req: Vercel::Request) -> Result<Vercel::Response<
     // Format arguments for the generic handler
     // ------------------------------------------------------------
 
-    let decimals: u16 = decimals.unwrap().parse().unwrap_or_default();
-    let create = Create { decimals: decimals.into() };
+    let decimals: Result<u16, ParseIntError> = decimals.unwrap().parse();
+    if decimals.is_err() {
+        let response_json = json!(GeneralErrorResponse {
+            message: String::from("Decimals query parameter is mandatory and should be a valid integer in order to create a valid campaign!"),
+        });
 
-    let result = handler(create, &buffer).await;
+        return response::to_vercel(response::ok(response_json));
+    }
+    let decimals = decimals.unwrap_or_default();
+
+    let result = handler(decimals.into(), &buffer).await;
     response::to_vercel(result)
 }
 

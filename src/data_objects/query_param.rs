@@ -15,7 +15,8 @@ fn default_string() -> String {
 
 #[derive(Deserialize)]
 pub struct Create {
-    pub decimals: usize,
+    #[serde(default = "default_string")]
+    pub decimals: String,
 }
 
 #[derive(Deserialize)]

@@ -54,7 +54,8 @@ pub async fn upload_to_ipfs(data: PersistentCampaignDto) -> Result<String, reqwe
 pub async fn download_from_ipfs<T: DeserializeOwned>(cid: &str) -> Result<T, reqwest::Error> {
     dotenv().ok();
     let ipfs_gateway = std::env::var("IPFS_GATEWAY").expect("IPFS_GATEWAY must be set");
-    let ipfs_url = format!("{}{}", ipfs_gateway, cid);
+    let pinata_access_token = std::env::var("PINATA_ACCESS_TOKEN").expect("PINATA_ACCESS_TOKEN must be set");
+    let ipfs_url = format!("{}{}?pinataGatewayToken={}", ipfs_gateway, cid, pinata_access_token);
     let response = reqwest::get(&ipfs_url).await?;
     let data: T = response.json().await?;
     Ok(data)
