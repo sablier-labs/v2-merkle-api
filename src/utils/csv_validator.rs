@@ -110,6 +110,7 @@ pub fn validate_csv_header(header: &StringRecord, validators: &[&dyn ColumnValid
     None
 }
 
+#[cfg(test)]
 mod tests {
     use super::*;
 
