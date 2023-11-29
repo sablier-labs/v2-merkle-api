@@ -48,7 +48,12 @@ impl CampaignCsvParsed {
         }
 
         for (row_index, result) in rdr.records().enumerate() {
-            let record = result?;
+            let row = row_index + 2;
+            if result.is_err() {
+                validation_errors.push(ValidationError { row, message: String::from("Invalid row") });
+                continue;
+            }
+            let record = result.unwrap();
 
             if validation_errors.len() >= 100 {
                 break;
@@ -56,13 +61,12 @@ impl CampaignCsvParsed {
 
             let address_field = record[0].trim();
             let amount_field = record[1].trim();
-            let row = row_index + 2;
             let row_errors = validate_csv_row(&record, row_index, &validators);
             if !row_errors.is_empty() {
                 validation_errors.extend(row_errors);
             }
 
-            if unique_addresses.contains(address_field) {
+            if unique_addresses.contains(&address_field.to_lowercase()) {
                 validation_errors.push(ValidationError {
                     row,
                     message: String::from(
@@ -101,4 +105,156 @@ fn pad_value(s: &str, no_decimals: usize) -> u128 {
     }
 
     result.parse().unwrap()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use csv::ReaderBuilder;
+
+    fn create_reader(input: &str) -> Reader<&[u8]> {
+        ReaderBuilder::new().from_reader(input.as_bytes())
+    }
+
+    #[test]
+    fn test_pad_value() {
+        assert_eq!(pad_value("480.5", 3), 480500);
+        assert_eq!(pad_value("613", 2), 61300);
+        assert_eq!(pad_value("123.", 1), 1230);
+    }
+
+    #[test]
+    fn test_valid_csv() {
+        let csv_data = "address,amount\n0x9ad7CAD4F10D0c3f875b8a2fd292590490c9f491,100.0\n0xf976aF93B0A5A9F55A7f285a3B5355B8575Eb5bc,200.0";
+        let reader = create_reader(csv_data);
+        let result = CampaignCsvParsed::build(reader, 2);
+        assert!(result.is_ok());
+        let result = result.unwrap();
+
+        assert_eq!(result.records.len(), 2);
+        assert_eq!(result.total_amount, 30000);
+        assert_eq!(result.number_of_recipients, 2);
+        assert!(result.validation_errors.is_empty());
+    }
+
+    #[test]
+    fn test_csv_wrong_header() {
+        let csv_data = "address,amount_invalid\n0x9ad7CAD4F10D0c3f875b8a2fd292590490c9f491,100.0\n0xf976aF93B0A5A9F55A7f285a3B5355B8575Eb5bc,200.0";
+        let reader = create_reader(csv_data);
+        let result = CampaignCsvParsed::build(reader, 2);
+        assert!(result.is_ok());
+        let result = result.unwrap();
+
+        assert!(!result.validation_errors.is_empty());
+        assert_eq!(
+            result.validation_errors[0].message,
+            "CSV header invalid. The csv header should contain `amount` column."
+        );
+    }
+
+    #[test]
+    fn test_csv_missing_header() {
+        let csv_data =
+            "address\n0x9ad7CAD4F10D0c3f875b8a2fd292590490c9f491\n0xf976aF93B0A5A9F55A7f285a3B5355B8575Eb5bc";
+        let reader = create_reader(csv_data);
+        let result = CampaignCsvParsed::build(reader, 2);
+        assert!(result.is_ok());
+        let result = result.unwrap();
+
+        assert!(!result.validation_errors.is_empty());
+        assert_eq!(result.validation_errors[0].message, "Insufficient columns");
+    }
+
+    #[test]
+    fn test_csv_row_missing_column() {
+        let csv_data = "address,amount\n0x9ad7CAD4F10D0c3f875b8a2fd292590490c9f491\n0xf976aF93B0A5A9F55A7f285a3B5355B8575Eb5bc,200.0";
+        let reader = create_reader(csv_data);
+        let result = CampaignCsvParsed::build(reader, 2);
+        assert!(result.is_ok());
+        let result = result.unwrap();
+
+        assert!(!result.validation_errors.is_empty());
+        assert_eq!(result.validation_errors[0].message, "Invalid row");
+    }
+
+    #[test]
+    fn test_csv_row_invalid_address() {
+        let csv_data = "address,amount\n0xThisIsNotAnAddress,100.0\n0xf976aF93B0A5A9F55A7f285a3B5355B8575Eb5bc,200.0";
+        let reader = create_reader(csv_data);
+        let result = CampaignCsvParsed::build(reader, 2);
+        assert!(result.is_ok());
+        let result = result.unwrap();
+
+        assert!(!result.validation_errors.is_empty());
+        assert_eq!(result.validation_errors[0].message, "Invalid Ethereum address");
+        assert_eq!(result.validation_errors[0].row, 2);
+    }
+
+    #[test]
+    fn test_csv_duplicated_addresses() {
+        let csv_data = "address,amount\n0x9ad7CAD4F10D0c3f875b8a2fd292590490c9f491,100.0\n0x9ad7CAD4F10D0c3f875b8a2fd292590490c9f491, 200.0";
+        let reader = create_reader(csv_data);
+        let result = CampaignCsvParsed::build(reader, 2);
+        assert!(result.is_ok());
+        let result = result.unwrap();
+
+        assert!(!result.validation_errors.is_empty());
+        assert_eq!(
+            result.validation_errors[0].message,
+            "Each recipient should have an unique address. This address was already specified in file"
+        );
+        assert_eq!(result.validation_errors[0].row, 3);
+    }
+
+    #[test]
+    fn test_csv_row_alfa_numeric_amount() {
+        let csv_data = "address,amount\n0x0x9ad7CAD4F10D0c3f875b8a2fd292590490c9f491, alfaNumeric_amount\n0xf976aF93B0A5A9F55A7f285a3B5355B8575Eb5bc,200.0";
+        let reader = create_reader(csv_data);
+        let result = CampaignCsvParsed::build(reader, 2);
+        assert!(result.is_ok());
+        let result = result.unwrap();
+
+        assert!(!result.validation_errors.is_empty());
+        assert_eq!(result.validation_errors[0].message, "Amounts should be positive, in normal notation, with an optional decimal point and a maximum number of decimals as provided by the query parameter.");
+        assert_eq!(result.validation_errors[0].row, 2);
+    }
+
+    #[test]
+    fn test_csv_row_amount_0() {
+        let csv_data = "address,amount\n0x0x9ad7CAD4F10D0c3f875b8a2fd292590490c9f491, 0\n0xf976aF93B0A5A9F55A7f285a3B5355B8575Eb5bc,200.0";
+        let reader = create_reader(csv_data);
+        let result = CampaignCsvParsed::build(reader, 2);
+        assert!(result.is_ok());
+        let result = result.unwrap();
+
+        assert!(!result.validation_errors.is_empty());
+        assert_eq!(result.validation_errors[0].message, "The amount cannot be 0");
+        assert_eq!(result.validation_errors[0].row, 2);
+    }
+
+    #[test]
+    fn test_csv_row_amount_negative() {
+        let csv_data = "address,amount\n0x0x9ad7CAD4F10D0c3f875b8a2fd292590490c9f491, -1\n0xf976aF93B0A5A9F55A7f285a3B5355B8575Eb5bc,200.0";
+        let reader = create_reader(csv_data);
+        let result = CampaignCsvParsed::build(reader, 2);
+        assert!(result.is_ok());
+        let result = result.unwrap();
+
+        assert!(!result.validation_errors.is_empty());
+        assert_eq!(result.validation_errors[0].message, "Amounts should be positive, in normal notation, with an optional decimal point and a maximum number of decimals as provided by the query parameter.");
+        assert_eq!(result.validation_errors[0].row, 2);
+    }
+
+    #[test]
+    fn test_csv_row_amount_wrong_precision() {
+        let csv_data = "address,amount\n0x0x9ad7CAD4F10D0c3f875b8a2fd292590490c9f491, 1.1234\n0xf976aF93B0A5A9F55A7f285a3B5355B8575Eb5bc,200.0";
+        let reader = create_reader(csv_data);
+        let result = CampaignCsvParsed::build(reader, 2);
+        assert!(result.is_ok());
+        let result = result.unwrap();
+
+        assert!(!result.validation_errors.is_empty());
+        assert_eq!(result.validation_errors[0].message, "Amounts should be positive, in normal notation, with an optional decimal point and a maximum number of decimals as provided by the query parameter.");
+        assert_eq!(result.validation_errors[0].row, 2);
+    }
 }
