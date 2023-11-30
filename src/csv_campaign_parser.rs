@@ -148,7 +148,7 @@ mod tests {
         assert!(!result.validation_errors.is_empty());
         assert_eq!(
             result.validation_errors[0].message,
-            "CSV header invalid. The csv header should contain `amount` column."
+            "CSV header invalid. The csv header should contain `amount` column. The amount column id missing"
         );
     }
 
@@ -207,8 +207,8 @@ mod tests {
     }
 
     #[test]
-    fn test_csv_row_alfa_numeric_amount() {
-        let csv_data = "address,amount\n0x0x9ad7CAD4F10D0c3f875b8a2fd292590490c9f491, alfaNumeric_amount\n0xf976aF93B0A5A9F55A7f285a3B5355B8575Eb5bc,200.0";
+    fn test_csv_row_alphanumeric_amount() {
+        let csv_data = "address,amount\n0x0x9ad7CAD4F10D0c3f875b8a2fd292590490c9f491, alphanumeric_amount\n0xf976aF93B0A5A9F55A7f285a3B5355B8575Eb5bc,200.0";
         let reader = create_reader(csv_data);
         let result = CampaignCsvParsed::build(reader, 2);
         assert!(result.is_ok());

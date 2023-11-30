@@ -92,18 +92,12 @@ pub fn build_route() -> impl warp::Filter<Extract = impl warp::Reply, Error = wa
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::utils::async_test::{setup_env_vars, SERVER};
 
     #[tokio::test]
     async fn handler_success_response() {
-        let mut server = mockito::Server::new_with_port(8000);
-
-        let host = server.host_with_port();
-        let parts: Vec<&str> = host.split(':').collect();
-        let port = parts[1];
-        let server_host = format!("http://localhost:{}/", port);
-
-        std::env::set_var("PINATA_ACCESS_TOKEN", "mock_pinata_access_token");
-        std::env::set_var("IPFS_GATEWAY", server_host);
+        let mut server = SERVER.lock().await;
+        setup_env_vars(&server);
 
         let mock = server
             .mock("GET", "/valid_cid?pinataGatewayToken=mock_pinata_access_token")
@@ -118,19 +112,13 @@ mod tests {
         let response = handler(validity).await;
         assert_eq!(response.status, warp::http::StatusCode::OK.as_u16());
         mock.assert();
+        drop(server);
     }
 
     #[tokio::test]
     async fn handler_error_response() {
-        let mut server = mockito::Server::new_with_port(8000);
-
-        let host = server.host_with_port();
-        let parts: Vec<&str> = host.split(':').collect();
-        let port = parts[1];
-        let server_host = format!("http://localhost:{}/", port);
-
-        std::env::set_var("PINATA_ACCESS_TOKEN", "mock_pinata_access_token");
-        std::env::set_var("IPFS_GATEWAY", server_host);
+        let mut server = SERVER.lock().await;
+        setup_env_vars(&server);
 
         let mock = server
             .mock("GET", "/invalid_cid?pinataGatewayToken=mock_pinata_access_token")
@@ -145,5 +133,6 @@ mod tests {
         let response = handler(validity).await;
         assert_eq!(response.status, warp::http::StatusCode::INTERNAL_SERVER_ERROR.as_u16());
         mock.assert();
+        drop(server);
     }
 }

@@ -32,7 +32,9 @@ impl ColumnValidator for AddressColumnValidator {
         if cel.to_lowercase() != "address" {
             return Some(ValidationError {
                 row: 1, // Header is in the first row
-                message: String::from("CSV header invalid. The csv header should contain `address` column."),
+                message: String::from(
+                    "CSV header invalid. The csv header should be `address` column. The address column is missing",
+                ),
             });
         }
         None
@@ -65,7 +67,9 @@ impl ColumnValidator for AmountColumnValidator {
         if cel.to_lowercase() != "amount" {
             return Some(ValidationError {
                 row: 1, // Header is in the first row
-                message: String::from("CSV header invalid. The csv header should contain `amount` column."),
+                message: String::from(
+                    "CSV header invalid. The csv header should contain `amount` column. The amount column id missing",
+                ),
             });
         }
         None

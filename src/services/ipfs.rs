@@ -56,7 +56,7 @@ pub async fn download_from_ipfs<T: DeserializeOwned>(cid: &str) -> Result<T, req
     dotenv().ok();
     let ipfs_gateway = std::env::var("IPFS_GATEWAY").expect("IPFS_GATEWAY must be set");
     let pinata_access_token = std::env::var("PINATA_ACCESS_TOKEN").expect("PINATA_ACCESS_TOKEN must be set");
-    let ipfs_url = format!("{}{}?pinataGatewayToken={}", ipfs_gateway, cid, pinata_access_token);
+    let ipfs_url = format!("{}/{}?pinataGatewayToken={}", ipfs_gateway, cid, pinata_access_token);
     let response = reqwest::get(&ipfs_url).await?;
     let data: T = response.json().await?;
     Ok(data)
@@ -65,6 +65,7 @@ pub async fn download_from_ipfs<T: DeserializeOwned>(cid: &str) -> Result<T, req
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::utils::async_test::{setup_env_vars, SERVER};
 
     #[test]
     fn try_deserialize_pinata_response_success() {
@@ -82,18 +83,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_upload_to_ipfs_ok() {
-        let mut server = mockito::Server::new();
-
-        let host = server.host_with_port();
-        let parts: Vec<&str> = host.split(':').collect();
-        let port = parts[1];
-        let server_host = format!("http://localhost:{}", port);
-
-        // Set environment variables
-        std::env::set_var("PINATA_API_KEY", "mock_pinata_api_key");
-        std::env::set_var("PINATA_SECRET_API_KEY", "mock_pinata_secret_key");
-        std::env::set_var("PINATA_API_SERVER", server_host);
-
+        let mut server = SERVER.lock().await;
+        setup_env_vars(&server);
         // Set up mock server
         let mock = server
             .mock("POST", "/pinning/pinFileToIPFS")
@@ -113,22 +104,14 @@ mod tests {
 
         assert!(result.is_ok());
         mock.assert();
+        drop(server);
     }
 
     #[tokio::test]
     async fn test_upload_to_ipfs_error() {
-        let mut server = mockito::Server::new();
+        let mut server = SERVER.lock().await;
 
-        let host = server.host_with_port();
-        let parts: Vec<&str> = host.split(':').collect();
-        let port = parts[1];
-        let server_host = format!("http://localhost:{}", port);
-
-        // Set environment variables
-        std::env::set_var("PINATA_API_KEY", "mock_pinata_api_key");
-        std::env::set_var("PINATA_SECRET_API_KEY", "mock_pinata_secret_key");
-        std::env::set_var("PINATA_API_SERVER", server_host);
-
+        setup_env_vars(&server);
         // Set up mock server
         let mock = server
             .mock("POST", "/pinning/pinFileToIPFS")
@@ -150,20 +133,14 @@ mod tests {
         let deserialized_response = try_deserialize_pinata_response(&result);
         assert!(deserialized_response.is_err());
         mock.assert();
+        drop(server);
     }
 
     #[tokio::test]
     async fn test_download_from_ipfs_success() {
-        let mut server = mockito::Server::new_with_port(8000);
+        let mut server = SERVER.lock().await;
 
-        let host = server.host_with_port();
-        let parts: Vec<&str> = host.split(':').collect();
-        let port = parts[1];
-        let server_host = format!("http://localhost:{}/", port);
-
-        // Set environment variables
-        std::env::set_var("PINATA_ACCESS_TOKEN", "mock_pinata_access_token");
-        std::env::set_var("IPFS_GATEWAY", server_host);
+        setup_env_vars(&server);
 
         // Set up mock server
         let mock = server
@@ -175,20 +152,14 @@ mod tests {
         let result: Result<PinataSuccess, _> = download_from_ipfs("valid_cid").await;
         assert!(result.is_ok());
         mock.assert();
+        drop(server);
     }
 
     #[tokio::test]
     async fn test_download_from_ipfs_error() {
-        let mut server = mockito::Server::new_with_port(8000);
+        let mut server = SERVER.lock().await;
 
-        let host = server.host_with_port();
-        let parts: Vec<&str> = host.split(':').collect();
-        let port = parts[1];
-        let server_host = format!("http://localhost:{}/", port);
-
-        // Set environment variables
-        std::env::set_var("PINATA_ACCESS_TOKEN", "mock_pinata_access_token");
-        std::env::set_var("IPFS_GATEWAY", server_host);
+        setup_env_vars(&server);
 
         // Set up mock server
         let mock = server
@@ -200,5 +171,6 @@ mod tests {
         let result: Result<PinataSuccess, _> = download_from_ipfs("valid_cid").await;
         assert!(result.is_err());
         mock.assert();
+        drop(server);
     }
 }

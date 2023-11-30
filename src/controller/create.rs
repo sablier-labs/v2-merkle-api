@@ -220,182 +220,126 @@ pub fn build_route() -> impl warp::Filter<Extract = impl warp::Reply, Error = wa
 #[cfg(test)]
 mod tests {
     use super::*;
-    use mockito::Mock;
+    use crate::utils::async_test::{setup_env_vars, SERVER};
     use warp::http::StatusCode;
 
-    async fn setup_mock_server() -> mockito::ServerGuard {
-        let server = mockito::Server::new();
-        let host = server.host_with_port();
-        let port = host.split(':').nth(1).unwrap();
-        let server_host = format!("http://localhost:{}", port);
-
-        // Set environment variables
-        std::env::set_var("PINATA_API_KEY", "mock_pinata_api_key");
-        std::env::set_var("PINATA_SECRET_API_KEY", "mock_pinata_secret_key");
-        std::env::set_var("PINATA_API_SERVER", server_host);
-
-        server
-    }
-
-    fn setup_mock_ipfs_upload(mut server: mockito::ServerGuard) -> (mockito::ServerGuard, Mock) {
+    #[tokio::test]
+    async fn test_valid_csv_upload() {
+        let mut server = SERVER.lock().await;
+        setup_env_vars(&server);
         let mock = server
             .mock("POST", "/pinning/pinFileToIPFS")
             .with_status(200)
             .with_body(r#"{"IpfsHash": "test_hash", "PinSize": 123, "Timestamp": "2021-01-01T00:00:00Z"}"#)
             .create();
 
-        (server, mock)
-    }
-
-    #[tokio::test]
-    async fn test_valid_csv_upload() {
-        let server = setup_mock_server().await;
-        let (server, mock) = setup_mock_ipfs_upload(server);
-
         let csv_data = b"address,amount\n0x9ad7CAD4F10D0c3f875b8a2fd292590490c9f491,100.0\n0xf976aF93B0A5A9F55A7f285a3B5355B8575Eb5bc,200.0";
         let response = handler(2, csv_data).await;
 
         assert_eq!(response.status, StatusCode::OK.as_u16());
         mock.assert();
-
-        // This is needed in order to preserve to mock server lifetime
         drop(server);
     }
 
     #[tokio::test]
     async fn test_csv_with_wrong_header() {
-        let server = setup_mock_server().await;
-        let (server, mock) = setup_mock_ipfs_upload(server);
-
-        let csv_data = b"address,amount_invalid\n0x9ad7CAD4F10D0c3f875b8a2fd292590490c9f491,100.0\n0xf976aF93B0A5A9F55A7f285a3B5355B8575Eb5bc,200.0";
+        let server = SERVER.lock().await;
+        setup_env_vars(&server);
+        let csv_data =b"address,amount_invalid\n0x9ad7CAD4F10D0c3f875b8a2fd292590490c9f491,100.0\n0xf976aF93B0A5A9F55A7f285a3B5355B8575Eb5bc,200.0";
         let response = handler(2, csv_data).await;
 
         assert_eq!(response.status, StatusCode::BAD_REQUEST.as_u16());
-        mock.expect(0);
-
-        // This is needed in order to preserve to mock server lifetime
         drop(server);
     }
 
     #[tokio::test]
     async fn test_csv_with_missing_header() {
-        let server = setup_mock_server().await;
-        let (server, mock) = setup_mock_ipfs_upload(server);
+        let server = SERVER.lock().await;
+        setup_env_vars(&server);
 
         let csv_data =
             b"address\n0x9ad7CAD4F10D0c3f875b8a2fd292590490c9f491\n0xf976aF93B0A5A9F55A7f285a3B5355B8575Eb5bc";
         let response = handler(2, csv_data).await;
 
         assert_eq!(response.status, StatusCode::BAD_REQUEST.as_u16());
-        mock.expect(0);
-
-        // This is needed in order to preserve to mock server lifetime
         drop(server);
     }
 
     #[tokio::test]
     async fn test_csv_with_row_with_missing_column() {
-        let server = setup_mock_server().await;
-        let (server, mock) = setup_mock_ipfs_upload(server);
-
-        let csv_data =
-            b"address,amount\n0x9ad7CAD4F10D0c3f875b8a2fd292590490c9f491\n0xf976aF93B0A5A9F55A7f285a3B5355B8575Eb5bc,200.0";
+        let server = SERVER.lock().await;
+        setup_env_vars(&server);
+        let csv_data =b"address,amount\n0x9ad7CAD4F10D0c3f875b8a2fd292590490c9f491\n0xf976aF93B0A5A9F55A7f285a3B5355B8575Eb5bc,200.0";
         let response = handler(2, csv_data).await;
 
         assert_eq!(response.status, StatusCode::BAD_REQUEST.as_u16());
-        mock.expect(0);
-
-        // This is needed in order to preserve to mock server lifetime
         drop(server);
     }
 
     #[tokio::test]
     async fn test_csv_with_row_with_invalid_address() {
-        let server = setup_mock_server().await;
-        let (server, mock) = setup_mock_ipfs_upload(server);
-
+        let server = SERVER.lock().await;
+        setup_env_vars(&server);
         let csv_data = b"address,amount\n0xThisIsNotAnAddress,100.0\n0xf976aF93B0A5A9F55A7f285a3B5355B8575Eb5bc,200.0";
         let response = handler(2, csv_data).await;
 
         assert_eq!(response.status, StatusCode::BAD_REQUEST.as_u16());
-        mock.expect(0);
-
-        // This is needed in order to preserve to mock server lifetime
         drop(server);
     }
 
     #[tokio::test]
     async fn test_csv_with_duplicated_addresses() {
-        let server = setup_mock_server().await;
-        let (server, mock) = setup_mock_ipfs_upload(server);
-
-        let csv_data = b"address,amount\n0x9ad7CAD4F10D0c3f875b8a2fd292590490c9f491,100.0\n0x9ad7CAD4F10D0c3f875b8a2fd292590490c9f491, 200.0";
+        let server = SERVER.lock().await;
+        setup_env_vars(&server);
+        let csv_data =b"address,amount\n0x9ad7CAD4F10D0c3f875b8a2fd292590490c9f491,100.0\n0x9ad7CAD4F10D0c3f875b8a2fd292590490c9f491,200.0";
         let response = handler(2, csv_data).await;
 
         assert_eq!(response.status, StatusCode::BAD_REQUEST.as_u16());
-        mock.expect(0);
-
-        // This is needed in order to preserve to mock server lifetime
         drop(server);
     }
 
     #[tokio::test]
     async fn test_csv_with_row_with_invalid_amount() {
-        let server = setup_mock_server().await;
-        let (server, mock) = setup_mock_ipfs_upload(server);
+        let server = SERVER.lock().await;
+        setup_env_vars(&server);
 
-        let csv_data = b"address,amount\n0x0x9ad7CAD4F10D0c3f875b8a2fd292590490c9f491, alfaNumeric_amount\n0xf976aF93B0A5A9F55A7f285a3B5355B8575Eb5bc,200.0";
+        let csv_data = b"address,amount\n0x0x9ad7CAD4F10D0c3f875b8a2fd292590490c9f491,alphanumeric_amount\n0xf976aF93B0A5A9F55A7f285a3B5355B8575Eb5bc,200.0";
         let response = handler(2, csv_data).await;
 
         assert_eq!(response.status, StatusCode::BAD_REQUEST.as_u16());
-        mock.expect(0);
-
-        // This is needed in order to preserve to mock server lifetime
         drop(server);
     }
 
     #[tokio::test]
     async fn test_csv_with_row_with_amount_0() {
-        let server = setup_mock_server().await;
-        let (server, mock) = setup_mock_ipfs_upload(server);
-
-        let csv_data = b"address,amount\n0x0x9ad7CAD4F10D0c3f875b8a2fd292590490c9f491, 0\n0xf976aF93B0A5A9F55A7f285a3B5355B8575Eb5bc,200.0";
+        let server = SERVER.lock().await;
+        setup_env_vars(&server);
+        let csv_data = b"address,amount\n0x0x9ad7CAD4F10D0c3f875b8a2fd292590490c9f491,0\n0xf976aF93B0A5A9F55A7f285a3B5355B8575Eb5bc,200.0";
         let response = handler(2, csv_data).await;
 
         assert_eq!(response.status, StatusCode::BAD_REQUEST.as_u16());
-        mock.expect(0);
-
-        // This is needed in order to preserve to mock server lifetime
         drop(server);
     }
 
     #[tokio::test]
     async fn test_csv_with_row_with_amount_negative() {
-        let server = setup_mock_server().await;
-        let (server, mock) = setup_mock_ipfs_upload(server);
-
-        let csv_data = b"address,amount\n0x0x9ad7CAD4F10D0c3f875b8a2fd292590490c9f491, -1\n0xf976aF93B0A5A9F55A7f285a3B5355B8575Eb5bc,200.0";
+        let server = SERVER.lock().await;
+        setup_env_vars(&server);
+        let csv_data = b"address,amount\n0x0x9ad7CAD4F10D0c3f875b8a2fd292590490c9f491,-1\n0xf976aF93B0A5A9F55A7f285a3B5355B8575Eb5bc,200.0";
         let response = handler(2, csv_data).await;
 
         assert_eq!(response.status, StatusCode::BAD_REQUEST.as_u16());
-        mock.expect(0);
-
-        // This is needed in order to preserve to mock server lifetime
         drop(server);
     }
 
     #[tokio::test]
     async fn test_csv_with_row_with_amount_with_wrong_precision() {
-        let server = setup_mock_server().await;
-        let (server, mock) = setup_mock_ipfs_upload(server);
-
-        let csv_data = b"address,amount\n0x0x9ad7CAD4F10D0c3f875b8a2fd292590490c9f491, 1.1234\n0xf976aF93B0A5A9F55A7f285a3B5355B8575Eb5bc,200.0";
+        let server = SERVER.lock().await;
+        setup_env_vars(&server);
+        let csv_data = b"address,amount\n0x0x9ad7CAD4F10D0c3f875b8a2fd292590490c9f491,1.1234\n0xf976aF93B0A5A9F55A7f285a3B5355B8575Eb5bc,200.0";
         let response = handler(2, csv_data).await;
 
         assert_eq!(response.status, StatusCode::BAD_REQUEST.as_u16());
-        mock.expect(0);
-
-        // This is needed in order to preserve to mock server lifetime
         drop(server);
     }
 }
