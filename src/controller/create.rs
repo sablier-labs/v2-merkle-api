@@ -22,6 +22,7 @@ use warp::{Buf, Filter};
 struct CustomError(String);
 impl warp::reject::Reject for CustomError {}
 
+/// Create request common handler. It validates the received data, creates the merkle tree and uploads it to ipfs.
 async fn handler(decimals: usize, buffer: &[u8]) -> response::R {
     let rdr = ReaderBuilder::new().from_reader(buffer);
     let parsed_csv = CampaignCsvParsed::build(rdr, decimals);
@@ -97,6 +98,7 @@ async fn handler(decimals: usize, buffer: &[u8]) -> response::R {
     response::ok(response_json)
 }
 
+/// Warp specific handler for the create endpoint
 pub async fn handler_to_warp(params: Create, form: FormData) -> WebResult<impl warp::Reply> {
     let decimals: Result<u16, ParseIntError> = params.decimals.parse();
     if decimals.is_err() {
@@ -130,6 +132,7 @@ pub async fn handler_to_warp(params: Create, form: FormData) -> WebResult<impl w
     Ok(response::to_warp(response::bad_request(response_json)))
 }
 
+/// Vercel specific handler for the create endpoint
 pub async fn handler_to_vercel(req: Vercel::Request) -> Result<Vercel::Response<Vercel::Body>, Vercel::Error> {
     // ------------------------------------------------------------
     // Extract query parameters from the URL: decimals
@@ -209,6 +212,7 @@ pub async fn handler_to_vercel(req: Vercel::Request) -> Result<Vercel::Response<
     response::to_vercel(result)
 }
 
+/// Bind the route with the handler for the warp handler.
 pub fn build_route() -> impl warp::Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
     warp::path!("api" / "create")
         .and(warp::post())

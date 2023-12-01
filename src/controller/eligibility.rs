@@ -16,6 +16,8 @@ use url::Url;
 use vercel_runtime as Vercel;
 use warp::Filter;
 
+/// Eligibility request common handler. It downloads data from ipfs and determines if an address is eligible for an
+/// airstream campaign.
 pub async fn handler(eligibility: Eligibility) -> response::R {
     let ipfs_data = download_from_ipfs::<PersistentCampaignDto>(&eligibility.cid).await;
     if ipfs_data.is_err() {
@@ -54,11 +56,13 @@ pub async fn handler(eligibility: Eligibility) -> response::R {
     response::ok(response_json)
 }
 
+/// Warp specific handler for the eligibility endpoint
 pub async fn handler_to_warp(eligibility: Eligibility) -> WebResult<impl warp::Reply> {
     let result = handler(eligibility).await;
     Ok(response::to_warp(result))
 }
 
+/// Vercel specific handler for the create eligibility
 pub async fn handler_to_vercel(req: Vercel::Request) -> Result<Vercel::Response<Vercel::Body>, Vercel::Error> {
     // ------------------------------------------------------------
     // Extract query parameters from the URL: address, cid
@@ -82,6 +86,7 @@ pub async fn handler_to_vercel(req: Vercel::Request) -> Result<Vercel::Response<
     response::to_vercel(result)
 }
 
+/// Bind the route with the handler for the warp handler.
 pub fn build_route() -> impl warp::Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
     warp::path!("api" / "eligibility")
         .and(warp::get())

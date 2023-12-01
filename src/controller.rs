@@ -5,10 +5,13 @@ pub mod eligibility;
 pub mod health;
 pub mod validity;
 
+/// Handle the rejection raised by the warp framework.
 async fn handle_rejection(err: warp::Rejection) -> Result<impl warp::Reply, std::convert::Infallible> {
     Ok(warp::reply::json(&format!("{:?}", err)))
 }
 
+/// Binds all the routes into a single API and create a proper configuration with the allowed headers and CORS
+/// configuration.
 pub fn build_routes() -> impl warp::Filter<Extract = impl warp::Reply> + Clone {
     let cors = warp::cors()
         .allow_methods(&[Method::GET, Method::POST, Method::PATCH, Method::DELETE])

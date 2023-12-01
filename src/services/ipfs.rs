@@ -9,6 +9,7 @@ use serde_json::json;
 use crate::data_objects::dto::PersistentCampaignDto;
 use serde::{de::DeserializeOwned, Deserialize};
 
+/// The success response after an upload request to Pinata
 #[derive(Deserialize, Debug)]
 pub struct PinataSuccess {
     #[serde(rename = "IpfsHash")]
@@ -19,11 +20,25 @@ pub struct PinataSuccess {
     pub timestamp: String,
 }
 
+/// Deserialize the text response returned by Pinata API into PinataSuccess
+///
+/// # Examples
+///
+/// ```
+/// use serde;
+/// use sablier_merkle_api::services::ipfs::{try_deserialize_pinata_response, PinataSuccess};
+///
+/// let result_ok: Result<PinataSuccess, serde_json::Error> = try_deserialize_pinata_response(r#"{"IpfsHash": "test_hash", "PinSize": 123, "Timestamp": "2023-04-05T00:00:00Z"}"#);
+/// let result_error: Result<PinataSuccess, serde_json::Error> = try_deserialize_pinata_response("Error message");
+/// assert!(result_ok.is_ok());
+/// assert!(result_error.is_err());
+/// ```
 pub fn try_deserialize_pinata_response(response_body: &str) -> Result<PinataSuccess, serde_json::Error> {
     let success = serde_json::from_str::<PinataSuccess>(response_body)?;
     Ok(success)
 }
 
+/// Upload and pin a json representing a valid processed airstream campaign
 pub async fn upload_to_ipfs(data: PersistentCampaignDto) -> Result<String, reqwest::Error> {
     dotenv().ok();
     let pinata_api_key = std::env::var("PINATA_API_KEY").expect("PINATA_API_KEY must be set");
@@ -52,6 +67,7 @@ pub async fn upload_to_ipfs(data: PersistentCampaignDto) -> Result<String, reqwe
     Ok(text_response)
 }
 
+/// Download the content from a specified CID through Pinata. The data is then parsed into a specified struct.
 pub async fn download_from_ipfs<T: DeserializeOwned>(cid: &str) -> Result<T, reqwest::Error> {
     dotenv().ok();
     let ipfs_gateway = std::env::var("IPFS_GATEWAY").expect("IPFS_GATEWAY must be set");
