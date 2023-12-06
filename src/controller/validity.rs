@@ -15,8 +15,8 @@ use url::Url;
 use vercel_runtime as Vercel;
 use warp::Filter;
 
-/// Validity request common handler. It downloads data from ipfs and checks if it can be properly deserialized into a
-/// PesistentCampaignDto struct.
+/// Validity request common handler. It downloads data from IPFS and checks if it can be properly deserialized into a
+/// `PersistentCampaignDto` struct.
 pub async fn handler(validity: Validity) -> response::R {
     let ipfs_data = download_from_ipfs::<PersistentCampaignDto>(&validity.cid).await;
     if ipfs_data.is_err() {
@@ -63,7 +63,7 @@ pub async fn handler_to_vercel(req: Vercel::Request) -> Result<Vercel::Response<
     response::to_vercel(result)
 }
 
-/// Bind the route with the handler for the warp handler.
+/// Bind the route with the handler for the Warp handler.
 pub fn build_route() -> impl warp::Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
     warp::path!("api" / "validity").and(warp::get()).and(warp::query::query::<Validity>()).and_then(handler_to_warp)
 }

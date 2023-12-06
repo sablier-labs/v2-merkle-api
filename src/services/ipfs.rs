@@ -38,7 +38,7 @@ pub fn try_deserialize_pinata_response(response_body: &str) -> Result<PinataSucc
     Ok(success)
 }
 
-/// Upload and pin a json representing a valid processed airstream campaign
+/// Upload and pin a JSON representing a valid processed airstream campaign
 pub async fn upload_to_ipfs(data: PersistentCampaignDto) -> Result<String, reqwest::Error> {
     dotenv().ok();
     let pinata_api_key = std::env::var("PINATA_API_KEY").expect("PINATA_API_KEY must be set");

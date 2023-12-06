@@ -31,7 +31,7 @@ pub fn is_valid_eth_address(address: &str) -> bool {
 
 /// Generic trait for a CSV column validator.
 pub trait ColumnValidator {
-    /// Generic function that validates a csv cell.
+    /// Generic function that validates a CSV cell.
     fn validate_cel(&self, cel: &str, row_index: usize) -> Option<ValidationError>;
     /// Generic function that validates a csv header.
     fn validate_header(&self, cel: &str) -> Option<ValidationError>;
@@ -40,7 +40,7 @@ pub trait ColumnValidator {
 /// Validator for a csv column that should contain valid Ethereum addresses
 pub struct AddressColumnValidator;
 impl ColumnValidator for AddressColumnValidator {
-    /// Validate if a csv cell contains a valid Ethereum address
+    /// Validate if a CSV cell contains a valid Ethereum address
     ///
     ///  # Examples
     ///
@@ -99,7 +99,7 @@ pub struct AmountColumnValidator {
 }
 
 impl ColumnValidator for AmountColumnValidator {
-    /// Validate if a csv cell contains a valid amount
+    /// Validate if a CSV cell contains a valid amount
     ///
     ///  # Examples
     ///
@@ -170,7 +170,7 @@ impl ColumnValidator for AmountColumnValidator {
     }
 }
 
-/// Validates a full csv row based on an array of objects that implement the ColumnValidator trait.
+/// Validates a full CSV row based on an array of objects that implement the ColumnValidator trait.
 ///
 ///  # Examples
 /// ```
@@ -217,7 +217,7 @@ pub fn validate_csv_row(
     errors
 }
 
-/// Validates a full csv header based on an array of objects that implement the ColumnValidator trait.
+/// Validates a full CSV header based on an array of objects that implement the ColumnValidator trait.
 ///
 ///  # Examples
 /// ```

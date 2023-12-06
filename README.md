@@ -15,14 +15,15 @@ For more details about Sablier, check out our [website](https://sablier.com) and
 In order to make the API work properly, you will need to create a `.env` file by following the `.env.example` file:
 
 ```text
+PINATA_ACCESS_TOKEN=
 PINATA_API_KEY=
+PINATA_API_SERVER=
 PINATA_SECRET_API_KEY=
 IPFS_GATEWAY=
-PINATA_ACCESS_TOKEN=
 ```
 
 After a campaign is created via the API, we use Pinata to upload and pin the file to IPFS. In order to obtain the
-`PINATA_API_KEY`, `PINATA_SECRET_API_KEY` and `PINATA_ACCESS_TOKEN`, follow this steps:
+`PINATA_API_KEY`, `PINATA_SECRET_API_KEY` and `PINATA_ACCESS_TOKEN`, follow these steps:
 
 1. Sign up or log in on https://app.pinata.cloud/
 1. Select the API Keys tab
@@ -33,9 +34,9 @@ After a campaign is created via the API, we use Pinata to upload and pin the fil
 1. From the popup, take the API Key and the API Secret and put them in the `.env` file. The `IPFS_GATEWAY` variable can
    be any IPFS gateway but we recommend using a private one (Pinata offers this as well). For more details about the
    interactions with IPFS, check [`src/services/ipfs.rs`](./src/services/ipfs.rs).
-1. Select the Access Controls tab
-1. Click Request Token
-1. Copy the toke and put in th `.env` file int the `PINATA_ACCESS_TOKEN` variable
+1. Select the "Access Controls" tab
+1. Click on the "Request Token" button
+1. Copy the token and put in th `.env` file in the `PINATA_ACCESS_TOKEN` variable
 
 We use Vercel for hosting, and this is why we have separate binaries for each endpoint. For local development, use this
 command:

@@ -8,14 +8,14 @@ use crate::utils::csv_validator::{
     ValidationError,
 };
 
-/// Record inside a csv airstream campaign
+/// Record inside a CSV airstream campaign
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct CampaignCsvRecord {
     pub address: String,
     pub amount: u128,
 }
 
-/// The abstraction of a csv airstream campaign
+/// The abstraction of a CSV airstream campaign
 pub struct CampaignCsvParsed {
     pub records: Vec<CampaignCsvRecord>,
     pub validation_errors: Vec<ValidationError>,
@@ -24,9 +24,10 @@ pub struct CampaignCsvParsed {
 }
 
 impl CampaignCsvParsed {
-    /// Creates a CampaignCsvParsed from reader and the number of decimals for each amount. It performs a validation
-    /// against each row of the reader. All the validation errors identified will be stored inside the validation_errors
-    /// member. Keep in mind that this function uses the validators required for a valid Airstream campaign.
+    /// Creates a `CampaignCsvParsed`` from reader and the number of decimals for each amount. It performs a validation
+    /// against each row of the reader. All the validation errors identified will be stored inside the
+    /// `validation_errors` member. Keep in mind that this function uses the validators required for a valid
+    /// Airstream campaign.
     ///
     /// # Examples
     ///

@@ -5,7 +5,7 @@ pub mod eligibility;
 pub mod health;
 pub mod validity;
 
-/// Handle the rejection raised by the warp framework.
+/// Handle the rejection raised by the Warp framework.
 async fn handle_rejection(err: warp::Rejection) -> Result<impl warp::Reply, std::convert::Infallible> {
     Ok(warp::reply::json(&format!("{:?}", err)))
 }
