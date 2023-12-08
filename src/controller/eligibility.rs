@@ -16,6 +16,8 @@ use url::Url;
 use vercel_runtime as Vercel;
 use warp::Filter;
 
+/// Eligibility request common handler. It downloads data from IPFS and determines if an address is eligible for an
+/// airstream campaign.
 pub async fn handler(eligibility: Eligibility) -> response::R {
     let ipfs_data = download_from_ipfs::<PersistentCampaignDto>(&eligibility.cid).await;
     if ipfs_data.is_err() {
@@ -54,11 +56,13 @@ pub async fn handler(eligibility: Eligibility) -> response::R {
     response::ok(response_json)
 }
 
+/// Warp specific handler for the eligibility endpoint
 pub async fn handler_to_warp(eligibility: Eligibility) -> WebResult<impl warp::Reply> {
     let result = handler(eligibility).await;
     Ok(response::to_warp(result))
 }
 
+/// Vercel specific handler for the create eligibility
 pub async fn handler_to_vercel(req: Vercel::Request) -> Result<Vercel::Response<Vercel::Body>, Vercel::Error> {
     // ------------------------------------------------------------
     // Extract query parameters from the URL: address, cid
@@ -82,9 +86,58 @@ pub async fn handler_to_vercel(req: Vercel::Request) -> Result<Vercel::Response<
     response::to_vercel(result)
 }
 
+/// Bind the route with the handler for the Warp handler.
 pub fn build_route() -> impl warp::Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
     warp::path!("api" / "eligibility")
         .and(warp::get())
         .and(warp::query::query::<Eligibility>())
         .and_then(handler_to_warp)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::utils::async_test::{setup_env_vars, SERVER};
+
+    #[tokio::test]
+    async fn handler_success_response() {
+        let mut server = SERVER.lock().await;
+        setup_env_vars(&server);
+
+        let mock = server
+            .mock("GET", "/valid_cid?pinataGatewayToken=mock_pinata_access_token")
+            .with_status(200)
+            .with_body(r#"{"root": "root", "total_amount": "10", "number_of_recipients": 1, "merkle_tree":"{\"format\":\"standard-v1\",\"tree\":[\"0x23bb7a869a407bc69b27975acff039dfe6a6abe5e3da626e98623d70137eb320\"],\"values\":[{\"value\":[\"0\",\"0x9ad7cad4f10d0c3f875b8a2fd292590490c9f491\",\"5000\"],\"tree_index\":0}],\"leaf_encoding\":[\"uint\",\"address\",\"uint256\"]}", "recipients": [{ "address": "0x0x9ad7CAD4F10D0c3f875b8a2fd292590490c9f491", "amount": "10"}]}"#)
+            .create();
+
+        let validity = Eligibility {
+            cid: "valid_cid".to_string(),
+            address: "0x0x9ad7CAD4F10D0c3f875b8a2fd292590490c9f491".to_string(),
+        };
+        let response = handler(validity).await;
+        assert_eq!(response.status, warp::http::StatusCode::OK.as_u16());
+        mock.assert();
+        drop(server);
+    }
+
+    #[tokio::test]
+    async fn handler_error_response() {
+        let mut server = SERVER.lock().await;
+        setup_env_vars(&server);
+
+        let mock = server
+            .mock("GET", "/invalid_cid?pinataGatewayToken=mock_pinata_access_token")
+            .with_status(500)
+            .with_body(r#"{"message": "Bad request"}"#)
+            .create();
+
+        let validity = Eligibility {
+            cid: "invalid_cid".to_string(),
+            address: "0x0x9ad7CAD4F10D0c3f875b8a2fd292590490c9f491".to_string(),
+        };
+        let response = handler(validity).await;
+        assert_eq!(response.status, warp::http::StatusCode::INTERNAL_SERVER_ERROR.as_u16());
+        mock.assert();
+        drop(server);
+    }
 }
