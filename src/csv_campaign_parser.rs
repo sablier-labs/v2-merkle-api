@@ -1,4 +1,5 @@
 use csv::Reader;
+use ethers_rs::{Address, Eip55};
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 use std::{collections::HashSet, error::Error};
@@ -101,7 +102,10 @@ impl CampaignCsvParsed {
                 total_amount += padded_amount;
                 number_of_recipients += 1;
                 unique_addresses.insert(address.clone());
-                records.push(CampaignCsvRecord { address, amount: padded_amount });
+                records.push(CampaignCsvRecord {
+                    address: Address::to_checksum_string(&Address::from_str(&address, false).unwrap()),
+                    amount: padded_amount,
+                });
             }
         }
 
