@@ -19,7 +19,7 @@ use vercel_runtime as Vercel;
 use warp::{Buf, Filter};
 
 #[derive(Debug)]
-struct CustomError(String);
+struct CustomError();
 impl warp::reject::Reject for CustomError {}
 
 /// Create request common handler. It validates the received data, creates the merkle tree and uploads it to ipfs.
