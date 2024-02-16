@@ -18,10 +18,6 @@ use serde_json::json;
 use vercel_runtime as Vercel;
 use warp::{Buf, Filter};
 
-#[derive(Debug)]
-struct CustomError();
-impl warp::reject::Reject for CustomError {}
-
 /// Create request common handler. It validates the received data, creates the merkle tree and uploads it to ipfs.
 async fn handler(decimals: usize, buffer: &[u8]) -> response::R {
     let rdr = ReaderBuilder::new().from_reader(buffer);
