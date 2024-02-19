@@ -47,6 +47,12 @@ You will need the following VSCode extensions:
 - [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)
 - [prettier](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode)
 
+## Recommendations
+
+We recommend forking this repository and running the merkle backend using your own infrastructure or a vercel
+environment hosted under an account you own. This guarantees you'll have more control over the up-time of the service,
+as well as access to add any custom features or optimisations you may require.
+
 ## License
 
 Sablier V2 Merkle API is licensed under [GPL v3 or later](./LICENSE.md).
