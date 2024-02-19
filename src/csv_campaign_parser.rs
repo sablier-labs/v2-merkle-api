@@ -68,7 +68,10 @@ impl CampaignCsvParsed {
             return Ok(CampaignCsvParsed { total_amount, number_of_recipients, records, validation_errors });
         }
 
+        let mut record_count = 0;
+
         for (row_index, result) in rdr.records().enumerate() {
+            record_count += 1;
             let row = row_index + 2;
             if result.is_err() {
                 validation_errors.push(ValidationError { row, message: String::from("Invalid row") });
@@ -109,6 +112,13 @@ impl CampaignCsvParsed {
             }
         }
 
+        if record_count <= 1 {
+            let error = ValidationError {
+                row: 1,
+                message: String::from("An airstream campaign must have at least 2 recipients"),
+            };
+            validation_errors.push(error);
+        }
         Ok(CampaignCsvParsed { total_amount, number_of_recipients, records, validation_errors })
     }
 }
