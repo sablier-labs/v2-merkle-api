@@ -1,8 +1,5 @@
 use dotenvy::dotenv;
-use reqwest::{
-    self,
-    multipart::{Form, Part},
-};
+use reqwest::multipart::{Form, Part};
 
 use serde_json::json;
 
