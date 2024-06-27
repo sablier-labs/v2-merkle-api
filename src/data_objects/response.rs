@@ -57,6 +57,11 @@ pub fn bad_request(json_response: Json) -> R {
     R { status: warp::http::StatusCode::BAD_REQUEST.as_u16(), message: json_response }
 }
 
+/// Create a UNAUTHORIZED type of response
+pub fn unauthorized(json_response: Json) -> R {
+    R { status: warp::http::StatusCode::UNAUTHORIZED.as_u16(), message: json_response }
+}
+
 /// Create an Ok type of response
 pub fn ok(json_response: Json) -> R {
     R { status: warp::http::StatusCode::OK.as_u16(), message: json_response }

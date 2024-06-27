@@ -16,6 +16,20 @@ use url::Url;
 use vercel_runtime as Vercel;
 use warp::Filter;
 
+/// Bearer token guard
+fn is_authorized(req: &Vercel::Request) -> bool {
+    let headers = req.headers();
+    let expected_token = std::env::var("MERKLE_API_BEARER_TOKEN").expect("MERKLE_API_BEARER_TOKEN must be set");
+
+    if let Some(auth_header) = headers.get("Authorization") {
+        if let Ok(auth_str) = auth_header.to_str() {
+            return auth_str == format!("Bearer {}", expected_token);
+        }
+    }
+
+    false
+}
+
 /// Eligibility request common handler. It downloads data from IPFS and determines if an address is eligible for an
 /// airstream campaign.
 pub async fn handler(eligibility: Eligibility) -> response::R {
@@ -71,19 +85,26 @@ pub async fn handler_to_vercel(req: Vercel::Request) -> Result<Vercel::Response<
     let url = Url::parse(&req.uri().to_string()).unwrap();
     let query: HashMap<String, String> = url.query_pairs().into_owned().collect();
 
-    // ------------------------------------------------------------
-    //Format arguments for the generic handler
-    // ------------------------------------------------------------
+    if is_authorized(&req) {
+        // ------------------------------------------------------------
+        //Format arguments for the generic handler
+        // ------------------------------------------------------------
 
-    let fallback = String::from("");
-    let params = Eligibility {
-        address: query.get("address").unwrap_or(&fallback).clone(),
-        cid: query.get("cid").unwrap_or(&fallback).clone(),
-    };
+        let fallback = String::from("");
+        let params = Eligibility {
+            address: query.get("address").unwrap_or(&fallback).clone(),
+            cid: query.get("cid").unwrap_or(&fallback).clone(),
+        };
 
-    let result = handler(params).await;
+        let result = handler(params).await;
 
-    response::to_vercel(result)
+        response::to_vercel(result)
+    } else {
+        let response_json =
+            json!(GeneralErrorResponse { message: String::from("Bad authentication process provided.") });
+
+        response::to_vercel(response::unauthorized(response_json))
+    }
 }
 
 /// Bind the route with the handler for the Warp handler.
