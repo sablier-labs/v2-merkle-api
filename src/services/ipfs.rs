@@ -11,10 +11,6 @@ use serde::{de::DeserializeOwned, Deserialize};
 pub struct PinataSuccess {
     #[serde(rename = "IpfsHash")]
     pub ipfs_hash: String,
-    #[serde(rename = "PinSize")]
-    pub pin_size: usize,
-    #[serde(rename = "Timestamp")]
-    pub timestamp: String,
 }
 
 /// Deserialize the text response returned by Pinata API into PinataSuccess
